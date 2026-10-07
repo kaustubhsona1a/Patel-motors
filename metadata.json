@@ -1,0 +1,8 @@
+{
+  "name": "Patel Motors",
+  "description": "Premium pre-owned motorcycle dealership in Mumbai. Buy and sell quality inspected bikes with complete confidence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
