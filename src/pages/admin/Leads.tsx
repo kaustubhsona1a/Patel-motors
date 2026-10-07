@@ -12,8 +12,7 @@ export default function AdminLeads() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-white tracking-widest uppercase">Lead Management</h1>
-        <p className="text-zinc-400 text-xs mt-2 font-mono uppercase tracking-wider font-semibold">Track and manage customer inquiries.</p>
+        <h1 className="text-lg sm:text-2xl font-serif font-bold text-white tracking-wider uppercase">Lead Management</h1>
       </div>
 
       <div className="bg-zinc-950/65 backdrop-blur-md rounded-2xl border border-white/5 shadow-lg overflow-hidden">
@@ -96,19 +95,18 @@ export default function AdminLeads() {
             {/* Mobile Card Layout */}
             <div className="block md:hidden divide-y divide-white/5 font-mono text-xs">
               {leads.map(lead => (
-                <div key={lead.id} className="p-4 space-y-3">
+                <div key={lead.id} className="p-3 space-y-2">
                   <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <p className="font-sans font-extrabold text-white text-base">{lead.name}</p>
-                      <p className="text-[10px] text-zinc-400 mt-1">{lead.phone}</p>
-                      {lead.email && <p className="text-[10px] text-zinc-500 mt-0.5 lowercase">{lead.email}</p>}
+                    <div className="min-w-0">
+                      <p className="font-sans font-extrabold text-white text-sm truncate">{lead.name}</p>
+                      <p className="text-[10px] text-zinc-400 font-mono mt-0.5 truncate">{lead.phone} {lead.email ? `• ${lead.email}` : ''}</p>
                     </div>
-                    <span className="text-[10px] text-zinc-500 shrink-0">{lead.date}</span>
+                    <span className="text-[9px] text-zinc-500 font-mono shrink-0">{lead.date}</span>
                   </div>
 
-                  <div className="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
-                    <span className="text-[9px] uppercase tracking-wider text-zinc-400 block mb-0.5">Motorcycle Inquiry / Submission</span>
-                    <span className="text-white font-bold whitespace-pre-line">{lead.car}</span>
+                  <div className="bg-white/[0.02] border border-white/5 rounded-lg p-2 text-xs">
+                    <span className="text-[8.5px] uppercase tracking-wider text-zinc-400 block mb-0.5">Motorcycle Inquiry</span>
+                    <span className="text-white font-bold truncate block">{lead.car}</span>
                     {lead.images && lead.images.length > 0 && (
                       <div className="flex gap-2 mt-2 pt-2 border-t border-white/5 flex-wrap">
                         {lead.images.map((img, idx) => (

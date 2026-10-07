@@ -9,17 +9,23 @@ export type VehicleStatus = 'Draft' | 'Available' | 'Reserved' | 'Sold' | 'Archi
 export interface SaleRecord {
   invoiceNumber: string;
   saleDate: string;
+  deliveryTime?: string;
   salePrice: number;
   taxAmount?: number;
+  rtoCharges?: number;
   discount?: number;
   finalAmount: number;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   customerAddress?: string;
+  customerIdentity?: string;
   customerGst?: string;
   paymentMethod: 'Bank Transfer (NEFT/RTGS)' | 'UPI' | 'Cheque' | 'Cash' | 'Card' | 'Finance / Loan';
   paymentStatus: 'Paid in Full' | 'Partial / Token' | 'Pending';
+  paymentRef?: string;
+  hypothecation?: string;
+  insuranceCompany?: string;
   amountPaid: number;
   balanceDue: number;
   notes?: string;

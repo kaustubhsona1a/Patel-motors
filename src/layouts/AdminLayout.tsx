@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Bike, Users, Settings, LogOut, Search, User as UserIcon, KeyRound, ShieldAlert, ArrowLeft, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Bike, Users, Settings, LogOut, Search, User as UserIcon, KeyRound, ShieldAlert, ArrowLeft, Menu, X, PlusCircle } from 'lucide-react';
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useVehicles, sanitizeHeroImage } from '../context/VehicleContext';
@@ -49,10 +49,11 @@ export default function AdminLayout() {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/dealer-management', icon: LayoutDashboard },
-    { name: 'Inventory', path: '/dealer-management/inventory', icon: Bike },
+    { name: 'Dealer Dashboard', path: '/dealer-management', icon: LayoutDashboard },
+    { name: 'Acquire Bike', path: '/dealer-management/inventory/add', icon: PlusCircle },
+    { name: 'Inventory and Billing', path: '/dealer-management/inventory', icon: Bike },
+    { name: 'Showroom Setting', path: '/dealer-management/settings', icon: Settings },
     { name: 'Leads', path: '/dealer-management/leads', icon: Users },
-    { name: 'Site Settings', path: '/dealer-management/settings', icon: Settings },
   ];
 
   if (authLoading) {
@@ -183,17 +184,23 @@ export default function AdminLayout() {
       )}
 
       {/* Sidebar - sliding on mobile, static on desktop */}
-      <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-zinc-950/95 lg:bg-zinc-950/65 backdrop-blur-md text-white flex-shrink-0 flex flex-col border-r border-white/5 z-50 lg:z-10 transition-transform duration-300 ease-out transform ${
+      <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-zinc-950/95 lg:bg-zinc-950/80 backdrop-blur-md text-white flex-shrink-0 flex flex-col border-r border-white/5 z-50 lg:z-10 transition-transform duration-300 ease-out transform ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-white/5">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="bg-white p-1.5 rounded-lg text-zinc-950">
-              <Bike className="w-5 h-5" />
+          <Link to="/dealer-management" className="flex flex-col justify-center select-none group py-0.5">
+            <div className="flex items-baseline tracking-[0.18em] leading-tight">
+              <span className="font-sans text-sm font-extrabold text-white uppercase group-hover:text-orange-400 transition-colors">
+                PATEL
+              </span>
+              <span className="font-sans text-xs font-bold text-zinc-300 uppercase ml-1.5 group-hover:text-white transition-colors">
+                MOTORS
+              </span>
             </div>
-            <div className="flex flex-col items-start leading-none">
-              <span className="font-serif text-sm tracking-widest text-white font-bold uppercase leading-none">PATEL MOTORS</span>
-              <span className="font-mono text-[8px] tracking-[0.3em] font-bold text-zinc-400 mt-0.5">MUMBAI</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[7.5px] font-mono tracking-[0.25em] text-orange-400 uppercase font-semibold">
+                DEALER PORTAL
+              </span>
             </div>
           </Link>
           {/* Close button for mobile */}
@@ -280,9 +287,9 @@ export default function AdminLayout() {
               />
             </div>
             {/* Minimal Mobile Header brand */}
-            <div className="sm:hidden flex flex-col items-start leading-none pointer-events-none">
-              <span className="font-serif text-[11px] tracking-widest text-white font-bold uppercase">PATEL MOTORS</span>
-              <span className="font-mono text-[7px] tracking-[0.2em] font-bold text-zinc-400 mt-0.5">DEALER</span>
+            <div className="sm:hidden flex items-baseline gap-1.5 pointer-events-none">
+              <span className="font-sans text-xs tracking-wider text-white font-extrabold uppercase">PATEL MOTORS</span>
+              <span className="font-mono text-[8px] tracking-widest font-semibold text-orange-400 uppercase">DEALER</span>
             </div>
           </div>
           <div className="flex items-center space-x-3 shrink-0">
@@ -293,11 +300,72 @@ export default function AdminLayout() {
         </header>
 
         {/* Scrollable Content with responsive padding */}
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-zinc-950/10 backdrop-blur-[1px]">
+        <div className="flex-1 overflow-auto p-3.5 sm:p-6 lg:p-8 pb-20 lg:pb-8 bg-zinc-950/10 backdrop-blur-[1px]">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>
         </div>
+
+        {/* Mobile Dealer Bottom Navigation Bar - 1-Tap navigation on phones */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+          <Link
+            to="/dealer-management"
+            className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
+              location.pathname === '/dealer-management'
+                ? 'text-white font-bold'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5">Overview</span>
+          </Link>
+
+          <Link
+            to="/dealer-management/inventory"
+            className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
+              location.pathname === '/dealer-management/inventory'
+                ? 'text-white font-bold'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Bike className="w-4 h-4" />
+            <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5">Bikes</span>
+          </Link>
+
+          <Link
+            to="/dealer-management/inventory/add"
+            className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors text-orange-400 hover:text-orange-300 font-bold ${
+              location.pathname.includes('/add') ? 'scale-105' : ''
+            }`}
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5">Acquire</span>
+          </Link>
+
+          <Link
+            to="/dealer-management/leads"
+            className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
+              location.pathname.startsWith('/dealer-management/leads')
+                ? 'text-white font-bold'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5">Leads</span>
+          </Link>
+
+          <Link
+            to="/dealer-management/settings"
+            className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
+              location.pathname.startsWith('/dealer-management/settings')
+                ? 'text-white font-bold'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5">Settings</span>
+          </Link>
+        </nav>
       </main>
     </div>
   );

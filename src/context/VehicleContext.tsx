@@ -5,8 +5,8 @@ import { useAuth } from './AuthContext';
 import { getFromCache, saveToCache } from '../lib/indexedDB';
 import { resolveImageUrl, isBombayMotorsUrl } from '../lib/imageCache';
 
-export const PATEL_HERO_DESKTOP = "/patel-hero-desktop.png";
-export const PATEL_HERO_MOBILE = "/patel-hero-mobile.png";
+export const PATEL_HERO_DESKTOP = "/patel_hero_laptop.png";
+export const PATEL_HERO_MOBILE = "/patel_hero_mobile.png";
 export const FALLBACK_HERO_DESKTOP = "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=1920";
 export const FALLBACK_HERO_MOBILE = "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=1080";
 export const PATEL_ABOUT_IMAGE = "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=1400";
@@ -80,16 +80,16 @@ const DEFAULT_CONFIG: SiteConfig = {
 };
 
 export function sanitizeHeroImage(path: string | undefined): string {
-  if (!path || isBombayMotorsUrl(path)) return PATEL_HERO_DESKTOP;
+  if (!path || isBombayMotorsUrl(path) || path.includes('images.unsplash.com')) return PATEL_HERO_DESKTOP;
   const resolved = resolveImageUrl(path);
-  if (!resolved || isBombayMotorsUrl(resolved)) return PATEL_HERO_DESKTOP;
+  if (!resolved || isBombayMotorsUrl(resolved) || resolved.includes('images.unsplash.com')) return PATEL_HERO_DESKTOP;
   return resolved;
 }
 
 export function sanitizeHeroMobileImage(path: string | undefined): string {
-  if (!path || isBombayMotorsUrl(path)) return PATEL_HERO_MOBILE;
+  if (!path || isBombayMotorsUrl(path) || path.includes('images.unsplash.com')) return PATEL_HERO_MOBILE;
   const resolved = resolveImageUrl(path);
-  if (!resolved || isBombayMotorsUrl(resolved)) return PATEL_HERO_MOBILE;
+  if (!resolved || isBombayMotorsUrl(resolved) || resolved.includes('images.unsplash.com')) return PATEL_HERO_MOBILE;
   return resolved;
 }
 

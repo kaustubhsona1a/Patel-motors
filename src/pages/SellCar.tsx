@@ -128,25 +128,25 @@ export default function SellCar() {
         </div>
 
         {submitted ? (
-          <div className="frost-card p-14 text-center rounded-2xl">
-            <div className="w-16 h-16 frost-pill text-white rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="frost-card p-8 sm:p-14 text-center rounded-2xl">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 frost-pill text-white rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <svg className="w-7 h-7 sm:w-8 sm:h-8 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-cinzel font-bold text-white mb-2 uppercase">Request Lodged</h2>
-            <p className="text-zinc-200 mb-8 tracking-wider uppercase text-[10px] leading-relaxed font-sans font-bold">Our purchase team will contact you within 2 business hours.</p>
-            <button onClick={resetForm} className="px-8 py-3.5 bg-white text-black hover:bg-zinc-100 rounded-full uppercase tracking-widest text-xs font-bold transition-all duration-300 font-sans shadow-lg">
+            <h2 className="text-xl sm:text-2xl font-cinzel font-bold text-white mb-2 uppercase">Request Lodged</h2>
+            <p className="text-zinc-200 mb-6 sm:mb-8 tracking-wider uppercase text-[10px] leading-relaxed font-sans font-bold">Our purchase team will contact you within 2 business hours.</p>
+            <button onClick={resetForm} className="px-6 sm:px-8 py-3 sm:py-3.5 bg-white text-black hover:bg-zinc-100 rounded-full uppercase tracking-widest text-xs font-bold transition-all duration-300 font-sans shadow-lg">
               Submit Another Bike
             </button>
           </div>
         ) : (
-          <div className="frost-card rounded-2xl p-8 md:p-12 font-sans">
-            <form onSubmit={handleSubmit} className="space-y-10">
+          <div className="frost-card rounded-2xl p-4 sm:p-8 md:p-12 font-sans">
+            <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-10">
               
               <div>
-                <h3 className="text-xs font-bold tracking-widest uppercase text-white mb-6 border-b border-white/15 pb-3 font-cinzel">Section A: Motorcycle Specs</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h3 className="text-xs font-bold tracking-widest uppercase text-white mb-4 sm:mb-6 border-b border-white/15 pb-2.5 sm:pb-3 font-cinzel">Section A: Motorcycle Specs</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6">
                   <div className="space-y-2">
                     <label htmlFor="make" className="block text-[10px] tracking-wider uppercase text-zinc-200 font-sans font-bold">Brand / Make</label>
                     <input id="make" value={formData.make} onChange={e => setFormData({...formData, make: e.target.value})} className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white text-sm placeholder:text-zinc-400 focus:outline-none focus:border-white focus:bg-black/60 transition-all font-sans" placeholder="e.g. Royal Enfield, Kawasaki, Triumph, KTM" required />

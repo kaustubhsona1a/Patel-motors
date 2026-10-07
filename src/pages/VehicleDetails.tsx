@@ -348,7 +348,7 @@ export default function VehicleDetails() {
 
         {car.description && (
           <div className={`border-t border-white/15 ${isMobile ? 'pt-4' : 'pt-8'}`}>
-            <h3 className="text-xs sm:text-sm font-bold font-cinzel text-white mb-2 sm:mb-4 uppercase tracking-widest">Showroom Notes & Heritage</h3>
+            <h3 className="text-xs sm:text-sm font-bold font-cinzel text-white mb-2 sm:mb-4 uppercase tracking-widest">Description</h3>
             <p className={`text-zinc-200 font-normal leading-relaxed whitespace-pre-line font-sans ${isMobile ? 'text-xs' : 'text-sm'}`}>{car.description}</p>
           </div>
         )}
@@ -363,12 +363,12 @@ export default function VehicleDetails() {
         <div className={`absolute top-0 right-0 bg-white text-black font-cinzel font-bold tracking-widest uppercase ${isMobile ? 'text-[8px] px-3 py-1.5 rounded-bl-xl rounded-tr-2xl' : 'text-[10px] px-4 py-2 rounded-bl-xl rounded-tr-2xl'}`}>
           Certified Motorcycle
         </div>
-        <h1 className={`font-cinzel font-bold text-white tracking-tight leading-tight uppercase ${isMobile ? 'text-xl mt-1' : 'text-3xl mt-4'}`}>
-          {car.make} <br/>
+        <h1 className={`font-cinzel font-bold text-white tracking-tight leading-tight uppercase ${isMobile ? 'text-lg mt-1' : 'text-2xl mt-4'}`}>
+          <span>{car.make}</span>{" "}
           <span className="font-normal text-zinc-300">{car.model}</span>
         </h1>
-        <p className={`tracking-widest uppercase text-zinc-300 font-sans font-semibold ${isMobile ? 'text-[9px] mt-1.5 mb-4' : 'text-[10px] mt-3 mb-8'}`}>{car.variant}</p>
-        <div className={`font-bold text-white border-b border-white/15 font-cinzel ${isMobile ? 'text-2xl pb-4 mb-4' : 'text-3xl pb-6 mb-4'}`}>{formatPrice(car.price)}</div>
+        <p className={`tracking-widest uppercase text-zinc-300 font-sans font-semibold ${isMobile ? 'text-[9px] mt-1 mb-3' : 'text-[10px] mt-2 mb-6'}`}>{car.variant}</p>
+        <div className={`font-bold text-white border-b border-white/15 font-cinzel ${isMobile ? 'text-xl pb-3 mb-3' : 'text-3xl pb-5 mb-4'}`}>{formatPrice(car.price)}</div>
 
         {car.instagramReel && (
           <div className={`rounded-2xl bg-white/5 border border-white/15 flex flex-col ${isMobile ? 'mb-4 p-3 gap-2' : 'mb-8 p-4.5 gap-3.5'}`}>

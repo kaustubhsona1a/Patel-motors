@@ -159,37 +159,37 @@ export default function Inventory() {
 
       <div className="container mx-auto max-w-7xl px-4 sm:px-6">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-8 border-b border-white/10 mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 pb-6 sm:pb-8 border-b border-white/10 mb-6 sm:mb-8">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-mono uppercase tracking-widest text-orange-400 font-bold mb-1.5">
+            <div className="flex items-center space-x-2 text-[10px] sm:text-xs font-mono uppercase tracking-widest text-orange-400 font-bold mb-1">
               <span>Showroom Catalog</span>
               <span>•</span>
-              <span>{filteredBikes.length} Verified Bikes Available</span>
+              <span>{filteredBikes.length} Bikes Available</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-cinzel font-bold text-white uppercase tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-cinzel font-bold text-white uppercase tracking-tight">
               Pre-Owned Motorcycles
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-1.5 max-w-2xl">
-              Every motorcycle in our showroom is physically verified, compression-tested, and cleared for instant RTO transfer across Mumbai and Maharashtra.
+            <p className="text-[11px] sm:text-xs text-zinc-400 font-sans mt-1 max-w-xl">
+              Verified, compression-tested motorcycles ready for instant RTO transfer across Mumbai and Maharashtra.
             </p>
           </div>
 
           {/* Quick Sort & Mobile Filter Toggle */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
-              className="lg:hidden px-4 py-2.5 bg-zinc-900 border border-white/15 text-white rounded-xl text-xs font-mono uppercase font-bold flex items-center gap-2"
+              className="lg:hidden px-3.5 py-2 bg-zinc-900 border border-white/15 text-white rounded-xl text-[11px] font-mono uppercase font-bold flex items-center gap-1.5"
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="w-3.5 h-3.5 text-orange-400" />
               <span>Filters</span>
             </button>
 
-            <div className="flex items-center bg-zinc-900/80 border border-white/15 rounded-xl px-3 py-2 text-xs font-mono">
-              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400 mr-2 shrink-0" />
+            <div className="flex items-center bg-zinc-900/80 border border-white/15 rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] font-mono">
+              <ArrowUpDown className="w-3 h-3 text-zinc-400 mr-1.5 shrink-0" />
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
-                className="bg-transparent text-white outline-none cursor-pointer uppercase text-[11px]"
+                className="bg-transparent text-white outline-none cursor-pointer uppercase text-[10px] sm:text-[11px]"
               >
                 <option value="featured" className="bg-zinc-950 text-white">Sort: Featured</option>
                 <option value="price-low" className="bg-zinc-950 text-white">Price: Low to High</option>
@@ -363,15 +363,15 @@ export default function Inventory() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-6">
                 {filteredBikes.map(bike => (
                   <div
                     key={bike.id}
-                    className="group bg-[#0e0e12]/90 border border-white/10 hover:border-orange-500/40 rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 shadow-xl hover:shadow-2xl"
+                    className="group bg-[#0e0e12]/90 border border-white/10 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col justify-between transition-all duration-300 shadow-xl"
                   >
                     <div>
                       {/* Image Container */}
-                      <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-black/80 mb-3.5">
+                      <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-lg sm:rounded-xl overflow-hidden bg-black/80 mb-2.5 sm:mb-3.5">
                         <SmartImage
                           src={bike.images?.[0] || ""}
                           fallbackSrc={VEHICLE_PLACEHOLDER_FALLBACK}
@@ -379,48 +379,48 @@ export default function Inventory() {
                           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                         />
                         {/* Year Badge */}
-                        <div className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-black/80 backdrop-blur-md border border-white/15 text-white text-[11px] font-mono font-bold rounded-lg">
+                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/80 backdrop-blur-md border border-white/15 text-white text-[10px] sm:text-[11px] font-mono font-bold rounded-md">
                           {bike.year}
                         </div>
                         {/* Body Type Badge */}
-                        <div className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-orange-500/20 backdrop-blur-md border border-orange-500/30 text-orange-400 text-[9.5px] font-mono font-bold uppercase tracking-wider rounded-lg">
+                        <div className="absolute top-2 right-2 px-2 py-0.5 bg-orange-500/20 backdrop-blur-md border border-orange-500/30 text-orange-400 text-[9px] sm:text-[9.5px] font-mono font-bold uppercase tracking-wider rounded-md">
                           {bike.bodyType || 'Motorcycle'}
                         </div>
                       </div>
 
                       {/* Title & Variant */}
-                      <h3 className="text-lg font-sans tracking-tight text-white mb-0.5">
+                      <h3 className="text-sm sm:text-base font-sans tracking-tight text-white mb-0.5 truncate">
                         <span className="font-extrabold">{bike.make}</span>{" "}
                         <span className="font-normal text-zinc-200">{bike.model}</span>
                       </h3>
-                      <p className="text-[10.5px] font-mono uppercase tracking-widest text-zinc-400 mb-3 truncate">
+                      <p className="text-[9.5px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-400 mb-2 truncate">
                         {bike.variant || "Standard Spec"}
                       </p>
 
                       {/* Selling Price */}
-                      <div className="flex items-center gap-2 mb-3.5">
-                        <span className="w-1.5 h-4.5 bg-orange-500 rounded-full inline-block shrink-0"></span>
-                        <span className="text-xl font-bold font-sans text-white tracking-tight">
+                      <div className="flex items-center gap-1.5 mb-2.5">
+                        <span className="w-1 h-3.5 bg-orange-500 rounded-full inline-block shrink-0"></span>
+                        <span className="text-base sm:text-lg font-bold font-sans text-orange-400 tracking-tight">
                           {formatPrice(bike.price)}
                         </span>
                       </div>
 
                       {/* 2x2 Specs Grid */}
-                      <div className="grid grid-cols-2 gap-y-2 gap-x-3 py-2.5 border-t border-white/10 text-zinc-300 text-xs font-sans">
-                        <div className="flex items-center gap-2 truncate">
-                          <Gauge className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <div className="grid grid-cols-2 gap-y-1.5 gap-x-2.5 py-2 border-t border-white/10 text-zinc-300 text-[10px] sm:text-xs font-sans">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Gauge className="w-3 h-3 text-zinc-400 shrink-0" />
                           <span className="truncate">{bike.mileage.toLocaleString('en-IN')} KM</span>
                         </div>
-                        <div className="flex items-center gap-2 truncate">
-                          <Settings className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Settings className="w-3 h-3 text-zinc-400 shrink-0" />
                           <span className="truncate">{bike.engine || (bike.engineCC ? `${bike.engineCC} cc` : 'Standard')}</span>
                         </div>
-                        <div className="flex items-center gap-2 truncate">
-                          <Fuel className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Fuel className="w-3 h-3 text-zinc-400 shrink-0" />
                           <span className="truncate">{bike.fuelType}</span>
                         </div>
-                        <div className="flex items-center gap-2 truncate">
-                          <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <div className="flex items-center gap-1.5 truncate">
+                          <ShieldCheck className="w-3 h-3 text-zinc-400 shrink-0" />
                           <span className="truncate">{bike.ownership}</span>
                         </div>
                       </div>
@@ -429,7 +429,7 @@ export default function Inventory() {
                     {/* View Details Link */}
                     <Link
                       to={`/inventory/${bike.id}`}
-                      className="mt-4 w-full py-2.5 border border-white/15 hover:border-orange-400 hover:bg-orange-500 hover:text-black rounded-xl text-center text-xs uppercase tracking-widest font-bold text-zinc-200 transition-all font-mono block"
+                      className="mt-2.5 w-full py-2 sm:py-2.5 border border-white/15 hover:border-orange-400 hover:bg-orange-500 hover:text-black rounded-lg sm:rounded-xl text-center text-[10.5px] sm:text-xs uppercase tracking-wider font-bold text-zinc-200 transition-all font-mono block"
                     >
                       View Bike Details
                     </Link>

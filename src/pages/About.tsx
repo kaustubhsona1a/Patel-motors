@@ -49,7 +49,7 @@ export default function About() {
             {/* Established Badge */}
             <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-white/20 bg-white/[0.06] backdrop-blur-md text-zinc-200 text-[9px] sm:text-xs uppercase tracking-wider font-sans font-semibold shadow-sm mb-3 sm:mb-4">
               <Bike className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-              <span>MUMBAI'S PREMIER PRE-OWNED MOTORCYCLE DESTINATION</span>
+              <span>PREMIUM PRE-OWNED BIKES • MUMBAI</span>
             </div>
 
             {/* Exact Required Brief Statement */}

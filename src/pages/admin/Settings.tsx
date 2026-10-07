@@ -205,8 +205,7 @@ export default function AdminSettings() {
   return (
     <div className="space-y-8 max-w-4xl font-sans text-zinc-300">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-white tracking-widest uppercase">Website Settings Manager</h1>
-        <p className="text-zinc-400 text-xs mt-2 font-mono uppercase tracking-wider font-semibold">Manage public showroom imagery, branding, logos, and custom client delivery photos.</p>
+        <h1 className="text-lg sm:text-2xl font-serif font-bold text-white tracking-wider uppercase">Showroom Setting</h1>
       </div>
 
 
@@ -346,6 +345,15 @@ export default function AdminSettings() {
                 >
                   Save URL
                 </button>
+                {siteConfig.homeHeroMobileImage && siteConfig.homeHeroMobileImage !== PATEL_HERO_MOBILE && (
+                  <button
+                    type="button"
+                    onClick={() => updateSiteConfig({ homeHeroMobileImage: PATEL_HERO_MOBILE })}
+                    className="bg-zinc-800 text-zinc-400 font-mono text-[10px] uppercase px-3 py-2.5 rounded-xl hover:text-white transition-all"
+                  >
+                    Reset
+                  </button>
+                )}
               </div>
             </div>
           </div>

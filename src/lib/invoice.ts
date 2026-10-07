@@ -11,11 +11,13 @@ export interface DealershipInfo {
   email: string;
   website: string;
   gstin?: string;
+  pan?: string;
+  stateCode?: string;
 }
 
 export const PATEL_MOTORS_DEALERSHIP: DealershipInfo = {
   name: "Patel Motors",
-  tagline: "Buy & Sell Quality Bikes With Complete Confidence",
+  tagline: "Buy, Sell & Exchange Premium Pre-Owned Two Wheelers",
   address: "Showroom No. 4, L.B.S. Marg, Opp. Marathon Heights, Mulund West",
   city: "Mumbai",
   state: "Maharashtra",
@@ -23,213 +25,679 @@ export const PATEL_MOTORS_DEALERSHIP: DealershipInfo = {
   phone: "+91 98201 55443 / +91 74001 13999",
   email: "sales@patelmotors.in",
   website: "https://patelmotors.in",
-  gstin: "27AABCP1234F1Z8"
+  gstin: "27AABCP1234F1Z8",
+  pan: "AABCP1234F",
+  stateCode: "27 (Maharashtra)"
 };
 
+/**
+ * Converts a number into Indian currency words representation
+ * e.g. 1580000 -> "Fifteen Lakh Eighty Thousand Rupees Only"
+ */
+export function numberToWordsIndian(amount: number): string {
+  if (isNaN(amount) || amount === 0) return 'Zero Rupees Only';
+
+  const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function convertHundreds(n: number): string {
+    let str = '';
+    if (n > 99) {
+      str += units[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    if (n > 19) {
+      str += tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + units[n % 10] : '') + ' ';
+    } else if (n > 0) {
+      str += units[n] + ' ';
+    }
+    return str.trim();
+  }
+
+  let num = Math.floor(Math.abs(amount));
+  let result = '';
+
+  const crore = Math.floor(num / 10000000);
+  num %= 10000000;
+  const lakh = Math.floor(num / 100000);
+  num %= 100000;
+  const thousand = Math.floor(num / 1000);
+  num %= 1000;
+  const remainder = num;
+
+  if (crore > 0) {
+    result += convertHundreds(crore) + ' Crore ';
+  }
+  if (lakh > 0) {
+    result += convertHundreds(lakh) + ' Lakh ';
+  }
+  if (thousand > 0) {
+    result += convertHundreds(thousand) + ' Thousand ';
+  }
+  if (remainder > 0) {
+    result += convertHundreds(remainder) + ' ';
+  }
+
+  return (result.trim() + ' Rupees Only');
+}
+
 export function generateInvoiceNumber(bike?: Vehicle): string {
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const currentYear = new Date().getFullYear();
+  const nextYearShort = String(currentYear + 1).slice(-2);
+  const finYear = `${currentYear}-${nextYearShort}`;
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   const bikePrefix = bike?.make ? bike.make.substring(0, 3).toUpperCase() : 'MOT';
-  return `PM-${dateStr}-${bikePrefix}-${randomSuffix}`;
+  return `PM/${finYear}/${bikePrefix}-${randomSuffix}`;
 }
 
 export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership: DealershipInfo = PATEL_MOTORS_DEALERSHIP): string {
   const salePriceFormatted = formatPrice(sale.salePrice);
-  const taxFormatted = sale.taxAmount ? formatPrice(sale.taxAmount) : '₹0';
+  const rtoFormatted = sale.rtoCharges ? formatPrice(sale.rtoCharges) : (sale.taxAmount ? formatPrice(sale.taxAmount) : '₹0');
   const discountFormatted = sale.discount ? formatPrice(sale.discount) : '₹0';
   const finalFormatted = formatPrice(sale.finalAmount);
   const paidFormatted = formatPrice(sale.amountPaid);
   const balanceFormatted = formatPrice(sale.balanceDue);
+  const amountWords = numberToWordsIndian(sale.finalAmount);
 
-  return `
-<!DOCTYPE html>
-<html>
+  const deliveryTime = sale.deliveryTime || '11:00 AM IST';
+  const deliveryDate = sale.saleDate || new Date().toISOString().split('T')[0];
+
+  return `<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Invoice #${sale.invoiceNumber} - ${dealership.name}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sale Invoice #${sale.invoiceNumber} - ${dealership.name}</title>
   <style>
-    @page { size: A4; margin: 15mm; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #18181b; margin: 0; padding: 20px; font-size: 13px; line-height: 1.5; }
-    .invoice-container { max-width: 800px; margin: 0 auto; border: 1px solid #e4e4e7; padding: 32px; border-radius: 8px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #18181b; padding-bottom: 20px; margin-bottom: 24px; }
-    .brand-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; color: #09090b; text-transform: uppercase; margin: 0; }
-    .brand-tagline { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #71717a; margin-top: 4px; }
-    .brand-contact { font-size: 11px; color: #52525b; margin-top: 8px; line-height: 1.4; }
-    .invoice-meta { text-align: right; }
-    .invoice-badge { display: inline-block; background: #18181b; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; }
-    .invoice-number { font-size: 15px; font-weight: 700; color: #09090b; }
-    .invoice-date { font-size: 12px; color: #71717a; margin-top: 2px; }
-    .two-cols { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
-    .col-box { flex: 1; background: #f4f4f5; padding: 14px 18px; border-radius: 6px; }
-    .col-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #71717a; margin-bottom: 8px; border-bottom: 1px solid #e4e4e7; padding-bottom: 4px; }
-    .col-text { font-size: 12px; line-height: 1.5; color: #27272a; }
-    .col-text strong { color: #09090b; font-size: 13px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    th { background: #18181b; color: #fff; text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-    td { padding: 12px; border-bottom: 1px solid #e4e4e7; font-size: 12px; }
-    .specs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 11px; color: #52525b; margin-top: 6px; }
-    .specs-grid span { color: #18181b; font-weight: 600; }
-    .totals-box { margin-left: auto; width: 320px; margin-bottom: 24px; }
-    .totals-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; color: #52525b; }
-    .totals-row.grand { border-top: 2px solid #18181b; padding-top: 10px; margin-top: 6px; font-size: 16px; font-weight: 800; color: #09090b; }
-    .payment-summary { background: #fafafa; border: 1px solid #e4e4e7; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px; display: flex; justify-content: space-between; }
-    .payment-item { font-size: 11px; }
-    .payment-item-label { color: #71717a; text-transform: uppercase; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
-    .payment-item-val { font-size: 13px; font-weight: 700; color: #09090b; }
-    .footer { border-top: 1px solid #e4e4e7; padding-top: 20px; font-size: 10px; color: #71717a; line-height: 1.5; display: flex; justify-content: space-between; }
-    .terms { max-width: 60%; }
-    .signature-box { text-align: right; margin-top: 10px; }
-    .signature-line { width: 160px; border-bottom: 1px solid #18181b; margin-bottom: 4px; display: inline-block; }
+    @page { 
+      size: A4 portrait; 
+      margin: 10mm; 
+    }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #0f172a;
+      margin: 0;
+      padding: 16px;
+      font-size: 11px;
+      line-height: 1.4;
+      background: #f8fafc;
+    }
+    .invoice-wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      padding: 24px 28px;
+      border-radius: 4px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    /* Header */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+    }
+    .brand-section {
+      flex: 1;
+    }
+    .brand-name {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #09090b;
+      margin: 0;
+      line-height: 1;
+    }
+    .brand-sub {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #ea580c;
+      margin-top: 4px;
+    }
+    .brand-info {
+      font-size: 10px;
+      color: #334155;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+    .invoice-header-meta {
+      text-align: right;
+      min-width: 200px;
+    }
+    .doc-badge {
+      display: inline-block;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 2px;
+      margin-bottom: 6px;
+    }
+    .invoice-no {
+      font-size: 13px;
+      font-weight: 800;
+      color: #09090b;
+      font-family: monospace;
+    }
+    .meta-line {
+      font-size: 10.5px;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .meta-line strong {
+      color: #09090b;
+    }
+    .status-pill {
+      display: inline-block;
+      font-weight: 800;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      margin-top: 4px;
+      background: ${sale.paymentStatus === 'Paid in Full' ? '#dcfce7; color: #15803d;' : '#fef3c7; color: #b45309;'};
+    }
+
+    /* Two Columns */
+    .columns-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .info-card {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 4px;
+    }
+    .info-card-header {
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #475569;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+    }
+    .info-card-body {
+      font-size: 10.5px;
+      line-height: 1.45;
+      color: #1e293b;
+    }
+    .info-card-body strong {
+      color: #09090b;
+      font-size: 11.5px;
+    }
+
+    /* Vehicle details specs grid */
+    .bike-specs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .bike-specs-table td {
+      padding: 2px 4px;
+      font-size: 10px;
+      border: none;
+    }
+    .bike-specs-table td.label {
+      color: #64748b;
+      width: 38%;
+      font-weight: 600;
+    }
+    .bike-specs-table td.val {
+      color: #09090b;
+      font-weight: 700;
+    }
+
+    /* Table */
+    .line-items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      border: 1px solid #cbd5e1;
+    }
+    .line-items-table th {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 7px 10px;
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+    }
+    .line-items-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 10.5px;
+      vertical-align: top;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+
+    /* Summary & Totals */
+    .bottom-split {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .payment-details-box {
+      border: 1px solid #cbd5e1;
+      padding: 10px 12px;
+      border-radius: 4px;
+      background: #f8fafc;
+    }
+    .payment-title {
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #475569;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+    }
+    .payment-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      padding: 2.5px 0;
+      color: #334155;
+    }
+    .payment-row strong {
+      color: #09090b;
+    }
+    .words-box {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed #cbd5e1;
+      font-size: 10px;
+      color: #475569;
+    }
+    .words-box strong {
+      color: #09090b;
+      text-transform: capitalize;
+    }
+
+    .totals-box {
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      padding: 10px 14px;
+      border-radius: 4px;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3.5px 0;
+      font-size: 10.5px;
+      color: #475569;
+    }
+    .totals-row.grand-total {
+      border-top: 2px solid #0f172a;
+      padding-top: 6px;
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #09090b;
+    }
+    .totals-row.amount-paid {
+      color: #15803d;
+      font-weight: 700;
+    }
+    .totals-row.balance {
+      color: ${sale.balanceDue > 0 ? '#b91c1c' : '#64748b'};
+      font-weight: 700;
+    }
+
+    /* Terms & Signatures */
+    .terms-box {
+      border-top: 1px solid #cbd5e1;
+      padding-top: 10px;
+      margin-bottom: 16px;
+      font-size: 9px;
+      color: #475569;
+      line-height: 1.45;
+    }
+    .terms-title {
+      font-weight: 800;
+      color: #09090b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .signatures-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-top: 14px;
+      border-top: 1px dashed #cbd5e1;
+    }
+    .sig-col {
+      text-align: center;
+      width: 220px;
+    }
+    .sig-line {
+      border-bottom: 1px solid #09090b;
+      height: 35px;
+      margin-bottom: 6px;
+    }
+    .sig-title {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #09090b;
+    }
+    .sig-sub {
+      font-size: 9px;
+      color: #64748b;
+    }
+
+    .no-print {
+      max-width: 820px;
+      margin: 12px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .print-btn {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     @media print {
-      body { padding: 0; }
-      .invoice-container { border: none; padding: 0; }
+      body { background: #ffffff; padding: 0; }
+      .invoice-wrapper { border: 1px solid #000; box-shadow: none; padding: 16px; }
       .no-print { display: none !important; }
     }
   </style>
 </head>
 <body>
-  <div class="invoice-container">
-    <div class="header">
-      <div>
-        <h1 class="brand-title">${dealership.name}</h1>
-        <div class="brand-tagline">${dealership.tagline}</div>
-        <div class="brand-contact">
+  <div class="no-print">
+    <div style="font-size: 12px; color: #475569; font-weight: 600;">
+      Official Sale Invoice & Delivery Receipt • ${dealership.name}
+    </div>
+    <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <div class="invoice-wrapper">
+    <!-- Top Dealership Header -->
+    <div class="top-bar">
+      <div class="brand-section">
+        <h1 class="brand-name">${dealership.name}</h1>
+        <div class="brand-sub">${dealership.tagline}</div>
+        <div class="brand-info">
           ${dealership.address}<br />
           ${dealership.city}, ${dealership.state} - ${dealership.pinCode}<br />
           Phone: ${dealership.phone} | Email: ${dealership.email}<br />
-          ${dealership.gstin ? `GSTIN: ${dealership.gstin}` : ''}
+          GSTIN: <strong>${dealership.gstin || '27AABCP1234F1Z8'}</strong> | PAN: <strong>${dealership.pan || 'AABCP1234F'}</strong> | State Code: <strong>${dealership.stateCode || '27'}</strong>
         </div>
       </div>
-      <div class="invoice-meta">
-        <div class="invoice-badge">Tax / Sale Invoice</div>
-        <div class="invoice-number">${sale.invoiceNumber}</div>
-        <div class="invoice-date">Date: ${sale.saleDate}</div>
-        <div class="invoice-date">Status: <span style="font-weight: 700; color: #059669;">${sale.paymentStatus}</span></div>
+      <div class="invoice-header-meta">
+        <div class="doc-badge">Vehicle Sale Invoice & Challan</div>
+        <div class="invoice-no">#${sale.invoiceNumber}</div>
+        <div class="meta-line">Date: <strong>${deliveryDate}</strong></div>
+        <div class="meta-line">Delivery Time: <strong>${deliveryTime}</strong></div>
+        <div><span class="status-pill">${sale.paymentStatus}</span></div>
       </div>
     </div>
 
-    <div class="two-cols">
-      <div class="col-box">
-        <div class="col-title">Sold To / Customer Details</div>
-        <div class="col-text">
+    <!-- 2 Column Customer & Vehicle Record -->
+    <div class="columns-grid">
+      <!-- Customer Information Card -->
+      <div class="info-card">
+        <div class="info-card-header">1. Purchaser / Customer Details</div>
+        <div class="info-card-body">
           <strong>${sale.customerName}</strong><br />
-          Phone: ${sale.customerPhone}<br />
+          Contact: <strong>${sale.customerPhone}</strong><br />
           ${sale.customerEmail ? `Email: ${sale.customerEmail}<br />` : ''}
-          ${sale.customerAddress ? `Address: ${sale.customerAddress}<br />` : ''}
-          ${sale.customerGst ? `GSTIN: ${sale.customerGst}<br />` : ''}
+          ${sale.customerAddress ? `Address: ${sale.customerAddress}<br />` : 'Address: Mumbai, Maharashtra<br />'}
+          ${sale.customerIdentity ? `ID / Aadhar / PAN: <strong>${sale.customerIdentity}</strong><br />` : ''}
+          ${sale.customerGst ? `Customer GSTIN: <span style="font-family: monospace;">${sale.customerGst}</span><br />` : ''}
         </div>
       </div>
-      <div class="col-box">
-        <div class="col-title">Dealership Vehicle Record</div>
-        <div class="col-text">
-          <strong>${bike.year} ${bike.make} ${bike.model}</strong><br />
-          Variant: ${bike.variant || 'Standard Spec'}<br />
-          Registration: ${bike.registration || 'Unregistered / Temp'}<br />
-          Color: ${bike.color || 'Standard'} | Mileage: ${bike.mileage.toLocaleString('en-IN')} KM<br />
-          Ownership: ${bike.ownership || '1st Owner'}
+
+      <!-- Vehicle Particulars Card -->
+      <div class="info-card">
+        <div class="info-card-header">2. Vehicle Particulars & RTO Record</div>
+        <div class="info-card-body">
+          <strong>${bike.year} ${bike.make} ${bike.model} ${bike.variant ? `(${bike.variant})` : ''}</strong>
+          <table class="bike-specs-table">
+            <tr>
+              <td class="label">Reg. Number:</td>
+              <td class="val" style="font-family: monospace; font-size: 11px;">${bike.registration || 'Unregistered / In-Process'}</td>
+            </tr>
+            <tr>
+              <td class="label">Chassis / VIN:</td>
+              <td class="val" style="font-family: monospace;">${bike.chassisNumber || 'Verified on Chassis'}</td>
+            </tr>
+            <tr>
+              <td class="label">Engine Number:</td>
+              <td class="val" style="font-family: monospace;">${bike.engineNumber || 'Verified on Crankcase'}</td>
+            </tr>
+            <tr>
+              <td class="label">Odometer:</td>
+              <td class="val">${bike.mileage.toLocaleString('en-IN')} KM</td>
+            </tr>
+            <tr>
+              <td class="label">Engine / Color:</td>
+              <td class="val">${bike.engine || (bike.engineCC ? `${bike.engineCC} cc` : 'Standard')} • ${bike.color || 'Standard'}</td>
+            </tr>
+            <tr>
+              <td class="label">Ownership / Fuel:</td>
+              <td class="val">${bike.ownership || '1st Owner'} • ${bike.fuelType || 'Petrol'}</td>
+            </tr>
+            <tr>
+              <td class="label">Insurance / RTO:</td>
+              <td class="val">${sale.insuranceCompany || bike.insuranceStatus || 'Valid'} • ${bike.rcStatus || 'Clear Mumbai Title'}</td>
+            </tr>
+          </table>
         </div>
       </div>
     </div>
 
-    <table>
+    <!-- Table of Charges & Consideration -->
+    <table class="line-items-table">
       <thead>
         <tr>
-          <th style="width: 55%;">Motorcycle Description & Identifiers</th>
-          <th style="width: 15%; text-align: center;">Year</th>
-          <th style="width: 15%; text-align: center;">Odo (KM)</th>
-          <th style="width: 15%; text-align: right;">Amount</th>
+          <th style="width: 5%;" class="text-center">#</th>
+          <th style="width: 50%;">Description of Goods / Particulars</th>
+          <th style="width: 15%;" class="text-center">Year / Make</th>
+          <th style="width: 15%;" class="text-center">Odo (KM)</th>
+          <th style="width: 15%;" class="text-right">Amount (INR)</th>
         </tr>
       </thead>
       <tbody>
         <tr>
+          <td class="text-center">1</td>
           <td>
-            <strong style="font-size: 13px; color: #09090b;">${bike.make} ${bike.model} - ${bike.variant || ''}</strong>
-            <div class="specs-grid">
-              <div>Reg No: <span>${bike.registration || 'N/A'}</span></div>
-              <div>Engine CC: <span>${bike.engine || (bike.engineCC ? `${bike.engineCC} cc` : 'N/A')}</span></div>
-              <div>Chassis/VIN: <span>${bike.chassisNumber || 'Verified by Inspection'}</span></div>
-              <div>Engine No: <span>${bike.engineNumber || 'Verified on Chassis'}</span></div>
-              <div>RC Status: <span>${bike.rcStatus || 'Clear Title'}</span></div>
-              <div>Insurance: <span>${bike.insuranceStatus || 'Valid'}</span></div>
+            <strong>${bike.make} ${bike.model} ${bike.variant || ''}</strong>
+            <div style="font-size: 9.5px; color: #64748b; margin-top: 2px;">
+              Pre-owned motorcycle sold in verified showroom condition. Verified clear title, 50-point technical inspection certified.
+            </div>
+            <div style="font-size: 9px; color: #475569; margin-top: 3px; font-family: monospace;">
+              Reg: ${bike.registration || 'N/A'} | Chassis: ${bike.chassisNumber || 'Verified'}
             </div>
           </td>
-          <td style="text-align: center; font-weight: 600;">${bike.year}</td>
-          <td style="text-align: center;">${bike.mileage.toLocaleString('en-IN')}</td>
-          <td style="text-align: right; font-weight: 700; font-size: 13px;">${salePriceFormatted}</td>
+          <td class="text-center">${bike.year}</td>
+          <td class="text-center" style="font-family: monospace;">${bike.mileage.toLocaleString('en-IN')}</td>
+          <td class="text-right" style="font-weight: 700; font-family: monospace;">${salePriceFormatted}</td>
         </tr>
+        ${sale.rtoCharges || sale.taxAmount ? `
+        <tr>
+          <td class="text-center">2</td>
+          <td>
+            <strong>RTO Documentation & Ownership Transfer Processing</strong>
+            <div style="font-size: 9.5px; color: #64748b;">Government fee, RTO paperwork filing, Form 29 & Form 30 verification.</div>
+          </td>
+          <td class="text-center">-</td>
+          <td class="text-center">-</td>
+          <td class="text-right" style="font-weight: 700; font-family: monospace;">${rtoFormatted}</td>
+        </tr>` : ''}
       </tbody>
     </table>
 
-    <div class="totals-box">
-      <div class="totals-row">
-        <span>Agreed Sale Price:</span>
-        <span style="font-weight: 600;">${salePriceFormatted}</span>
+    <!-- Bottom Split: Payment Settlement + Financial Totals -->
+    <div class="bottom-split">
+      <div class="payment-details-box">
+        <div class="payment-title">Payment & Settlement Details</div>
+        <div class="payment-row">
+          <span>Payment Mode:</span>
+          <strong>${sale.paymentMethod}</strong>
+        </div>
+        ${sale.paymentRef ? `
+        <div class="payment-row">
+          <span>Transaction Ref / UTR:</span>
+          <strong style="font-family: monospace;">${sale.paymentRef}</strong>
+        </div>` : ''}
+        ${sale.hypothecation ? `
+        <div class="payment-row">
+          <span>Hypothecation Status:</span>
+          <strong>${sale.hypothecation}</strong>
+        </div>` : ''}
+        <div class="payment-row">
+          <span>Payment Status:</span>
+          <strong style="color: ${sale.paymentStatus === 'Paid in Full' ? '#15803d' : '#b45309'};">${sale.paymentStatus}</strong>
+        </div>
+        <div class="words-box">
+          Amount in Words:<br />
+          <strong>${amountWords}</strong>
+        </div>
       </div>
-      ${sale.taxAmount ? `
-      <div class="totals-row">
-        <span>Taxes / Applicable RTO Fees:</span>
-        <span>${taxFormatted}</span>
-      </div>` : ''}
-      ${sale.discount ? `
-      <div class="totals-row" style="color: #dc2626;">
-        <span>Special Dealer Discount:</span>
-        <span>-${discountFormatted}</span>
-      </div>` : ''}
-      <div class="totals-row grand">
-        <span>Final Total:</span>
-        <span>${finalFormatted}</span>
+
+      <div class="totals-box">
+        <div class="totals-row">
+          <span>Agreed Vehicle Price:</span>
+          <span style="font-family: monospace; font-weight: 600;">${salePriceFormatted}</span>
+        </div>
+        ${(sale.rtoCharges || sale.taxAmount) ? `
+        <div class="totals-row">
+          <span>RTO / Transfer Charges:</span>
+          <span style="font-family: monospace;">+${rtoFormatted}</span>
+        </div>` : ''}
+        ${sale.discount ? `
+        <div class="totals-row" style="color: #b91c1c;">
+          <span>Special Dealer Discount:</span>
+          <span style="font-family: monospace;">-${discountFormatted}</span>
+        </div>` : ''}
+        <div class="totals-row grand-total">
+          <span>Total Net Invoice:</span>
+          <span style="font-family: monospace;">${finalFormatted}</span>
+        </div>
+        <div class="totals-row amount-paid">
+          <span>Amount Paid (${sale.paymentMethod}):</span>
+          <span style="font-family: monospace;">${paidFormatted}</span>
+        </div>
+        ${sale.balanceDue > 0 ? `
+        <div class="totals-row balance">
+          <span>Balance Due:</span>
+          <span style="font-family: monospace;">${balanceFormatted}</span>
+        </div>` : `
+        <div class="totals-row" style="color: #15803d; font-size: 10px; font-weight: 700;">
+          <span>Balance Payable:</span>
+          <span>NIL (Fully Settled)</span>
+        </div>`}
       </div>
     </div>
 
-    <div class="payment-summary">
-      <div class="payment-item">
-        <div class="payment-item-label">Payment Method</div>
-        <div class="payment-item-val">${sale.paymentMethod}</div>
-      </div>
-      <div class="payment-item">
-        <div class="payment-item-label">Amount Paid</div>
-        <div class="payment-item-val" style="color: #059669;">${paidFormatted}</div>
-      </div>
-      <div class="payment-item">
-        <div class="payment-item-label">Balance Due</div>
-        <div class="payment-item-val" style="color: ${sale.balanceDue > 0 ? '#dc2626' : '#71717a'};">${balanceFormatted}</div>
-      </div>
-      <div class="payment-item">
-        <div class="payment-item-label">Payment Status</div>
-        <div class="payment-item-val">${sale.paymentStatus}</div>
-      </div>
+    <!-- Terms, RTO Transfer & Undertaking -->
+    <div class="terms-box">
+      <div class="terms-title">Terms & Delivery Undertaking (Motor Vehicles Act)</div>
+      1. <strong>Delivery & Inspection:</strong> The purchaser confirms having physically inspected and test-driven the motorcycle and acknowledges taking possession in fully satisfactory running condition.<br />
+      2. <strong>Transfer of Liability:</strong> From the date (${deliveryDate}) and time (${deliveryTime}) of physical delivery, all traffic fines, e-challans, third-party claims, and road liabilities rest exclusively with the purchaser.<br />
+      3. <strong>Title & Ownership:</strong> Patel Motors warrants genuine odometer reading, non-accidental chassis, and clear unencumbered title. Forms 29 & 30 have been signed for transfer at the concerned RTO.<br />
+      4. <strong>Subject to Jurisdiction:</strong> Any dispute arising out of this transaction shall be subject to the exclusive jurisdiction of the Courts in Mumbai.
     </div>
 
-    <div class="footer">
-      <div class="terms">
-        <strong>Terms & Conditions:</strong><br />
-        1. All pre-owned motorcycles are sold after comprehensive physical and mechanical verification.<br />
-        2. Delivery is subject to full payment clearance and submission of RTO transfer documents.<br />
-        3. Patel Motors guarantees clean title and unencumbered vehicle possession at the time of delivery.
+    <!-- Dual Signatures -->
+    <div class="signatures-section">
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <div class="sig-title">Purchaser's Signature</div>
+        <div class="sig-sub">${sale.customerName} (Buyer)</div>
       </div>
-      <div class="signature-box">
-        <br /><br />
-        <div class="signature-line"></div><br />
-        <strong>Authorized Signatory</strong><br />
-        Patel Motors, Mumbai
+
+      <div class="sig-col">
+        <div style="font-size: 8px; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">Dealership Seal</div>
+        <div class="sig-line"></div>
+        <div class="sig-title">For PATEL MOTORS</div>
+        <div class="sig-sub">Authorized Signatory (Mulund, Mumbai)</div>
       </div>
     </div>
   </div>
 </body>
-</html>
-`;
+</html>`;
 }
 
 export function printInvoice(bike: Vehicle, sale: SaleRecord): void {
   const html = generateInvoiceHtml(bike, sale);
-  const printWindow = window.open('', '_blank', 'width=900,height=750');
-  if (printWindow) {
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 350);
+  
+  // Try popup window first if allowed
+  try {
+    const printWindow = window.open('', '_blank', 'width=950,height=800');
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 400);
+      return;
+    }
+  } catch (e) {
+    // Popup was blocked or restricted by iframe sandbox
+  }
+
+  // Robust iframe fallback that works cleanly inside sandboxed iframes
+  try {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    document.body.appendChild(iframe);
+    
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      iframe.contentWindow?.focus();
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (iframe.parentNode) {
+            document.body.removeChild(iframe);
+          }
+        }, 1500);
+      }, 400);
+    }
+  } catch (err) {
+    console.error('Invoice printing failed:', err);
   }
 }

@@ -212,20 +212,21 @@ export default function AdminAddVehicle() {
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const handleSaveDraft = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     formSaved.current = true;
 
+    // For drafts, photos, VIN, and engine numbers are completely optional
     const bikePayload: Partial<Vehicle> = {
-      make: formData.make.trim(),
-      model: formData.model.trim(),
+      make: formData.make.trim() || 'Draft Motorcycle',
+      model: formData.model.trim() || 'Untitled',
       variant: formData.variant.trim(),
-      year: Number(formData.year),
-      registrationYear: Number(formData.registrationYear || formData.year),
+      year: Number(formData.year) || new Date().getFullYear(),
+      registrationYear: Number(formData.registrationYear || formData.year) || new Date().getFullYear(),
       registration: formData.registration.trim().toUpperCase(),
-      price: Number(formData.price),
+      price: formData.price ? Number(formData.price) : 0,
       purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : undefined,
-      mileage: Number(formData.mileage),
+      mileage: formData.mileage ? Number(formData.mileage) : 0,
       bodyType: formData.bodyType,
       fuelType: formData.fuelType,
       transmission: formData.transmission,
@@ -238,15 +239,99 @@ export default function AdminAddVehicle() {
       serviceHistory: formData.serviceHistory,
       condition: formData.condition,
       location: formData.location,
-      chassisNumber: formData.chassisNumber.trim(),
-      engineNumber: formData.engineNumber.trim(),
+      chassisNumber: formData.chassisNumber.trim() || undefined,
+      engineNumber: formData.engineNumber.trim() || undefined,
+      description: formData.description.trim(),
+      inspectionNotes: formData.inspectionNotes.trim(),
+      instagramReel: formData.instagramReel.trim(),
+      status: 'Draft',
+      featured: formData.featured,
+      images: images || [], // Empty photos completely allowed for drafts
+      features: []
+    };
+
+    if (isEditing && id) {
+      updateVehicle(id, bikePayload);
+    } else {
+      const newBike: Vehicle = {
+        id: 'bike_' + Date.now().toString(),
+        make: bikePayload.make!,
+        model: bikePayload.model!,
+        variant: bikePayload.variant,
+        year: bikePayload.year!,
+        registrationYear: bikePayload.registrationYear,
+        registration: bikePayload.registration,
+        price: bikePayload.price!,
+        purchasePrice: bikePayload.purchasePrice,
+        mileage: bikePayload.mileage!,
+        bodyType: bikePayload.bodyType,
+        fuelType: bikePayload.fuelType!,
+        transmission: bikePayload.transmission!,
+        engine: bikePayload.engine!,
+        engineCC: bikePayload.engineCC,
+        color: bikePayload.color!,
+        ownership: bikePayload.ownership!,
+        insuranceStatus: bikePayload.insuranceStatus,
+        rcStatus: bikePayload.rcStatus,
+        serviceHistory: bikePayload.serviceHistory,
+        condition: bikePayload.condition,
+        location: bikePayload.location,
+        chassisNumber: bikePayload.chassisNumber,
+        engineNumber: bikePayload.engineNumber,
+        description: bikePayload.description,
+        inspectionNotes: bikePayload.inspectionNotes,
+        instagramReel: bikePayload.instagramReel,
+        status: 'Draft',
+        featured: bikePayload.featured,
+        images: images || [],
+        features: []
+      };
+      addVehicle(newBike);
+    }
+
+    navigate('/dealer-management/inventory');
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    formSaved.current = true;
+
+    if (formData.status === 'Draft') {
+      handleSaveDraft();
+      return;
+    }
+
+    const bikePayload: Partial<Vehicle> = {
+      make: formData.make.trim(),
+      model: formData.model.trim(),
+      variant: formData.variant.trim(),
+      year: Number(formData.year),
+      registrationYear: Number(formData.registrationYear || formData.year),
+      registration: formData.registration.trim().toUpperCase(),
+      price: Number(formData.price) || 0,
+      purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : undefined,
+      mileage: Number(formData.mileage) || 0,
+      bodyType: formData.bodyType,
+      fuelType: formData.fuelType,
+      transmission: formData.transmission,
+      engine: formData.engine.trim() || (formData.engineCC ? `${formData.engineCC} cc` : 'Standard'),
+      engineCC: formData.engineCC ? Number(formData.engineCC) : undefined,
+      color: formData.color.trim() || 'Standard',
+      ownership: formData.ownership,
+      insuranceStatus: formData.insuranceStatus,
+      rcStatus: formData.rcStatus,
+      serviceHistory: formData.serviceHistory,
+      condition: formData.condition,
+      location: formData.location,
+      chassisNumber: formData.chassisNumber.trim() || undefined,
+      engineNumber: formData.engineNumber.trim() || undefined,
       description: formData.description.trim(),
       inspectionNotes: formData.inspectionNotes.trim(),
       instagramReel: formData.instagramReel.trim(),
       status: formData.status,
       featured: formData.featured,
-      images: images,
-      features: ['50-Point Pre-Purchase Inspection', 'Clear RTO Documentation', 'Engine & Chassis Checked']
+      images: images || [],
+      features: []
     };
 
     if (isEditing && id) {
@@ -282,8 +367,8 @@ export default function AdminAddVehicle() {
         instagramReel: bikePayload.instagramReel,
         status: bikePayload.status!,
         featured: bikePayload.featured,
-        images: images,
-        features: bikePayload.features || []
+        images: images || [],
+        features: []
       };
       addVehicle(newBike);
     }
@@ -292,49 +377,46 @@ export default function AdminAddVehicle() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-16">
+    <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-16">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b border-white/10 pb-4 sm:pb-6">
         <div>
           <Link 
             to="/dealer-management/inventory"
-            className="inline-flex items-center text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-white mb-2 transition-colors"
+            className="inline-flex items-center text-[11px] sm:text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-white mb-1.5 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Inventory
           </Link>
-          <h1 className="text-3xl font-serif font-bold text-white tracking-widest uppercase">
-            {isEditing ? 'Edit Motorcycle' : 'Acquire Bike / Add Bike'}
+          <h1 className="text-lg sm:text-2xl font-serif font-bold text-white tracking-wider uppercase">
+            {isEditing ? 'Edit Motorcycle' : 'ACQUIRE BIKE'}
           </h1>
-          <p className="text-zinc-400 text-xs mt-1 font-sans">
-            Enter full motorcycle technical specs, acquisition costs, title credentials, and upload verified photos to Supabase.
-          </p>
         </div>
 
         {/* Quick status selector */}
-        <div className="flex items-center space-x-2 bg-zinc-900/80 border border-white/10 p-1.5 rounded-xl">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2">Status:</span>
+        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start space-x-1.5 bg-zinc-900/80 border border-white/10 p-1 rounded-xl">
+          <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-1.5 hidden sm:inline">Status:</span>
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, status: 'Available' }))}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all ${
+            className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase transition-all ${
               formData.status === 'Available' ? 'bg-orange-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Available (Live)
+            Available
           </button>
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, status: 'Draft' }))}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all ${
+            className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase transition-all ${
               formData.status === 'Draft' ? 'bg-zinc-700 text-white shadow-md' : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Draft (Hidden)
+            Draft
           </button>
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, status: 'Reserved' }))}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all ${
+            className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase transition-all ${
               formData.status === 'Reserved' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -345,7 +427,7 @@ export default function AdminAddVehicle() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* SECTION 1: BASIC MOTORCYCLE INFORMATION */}
-        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl space-y-5">
+        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-5">
           <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
             <Layers className="w-4 h-4 text-orange-400" />
             <h2 className="font-serif font-bold text-white text-base uppercase tracking-wider">
@@ -484,7 +566,7 @@ export default function AdminAddVehicle() {
         </div>
 
         {/* SECTION 2: ENGINE, MECHANICS & CONDITION */}
-        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl space-y-5">
+        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-5">
           <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
             <Sparkles className="w-4 h-4 text-orange-400" />
             <h2 className="font-serif font-bold text-white text-base uppercase tracking-wider">
@@ -580,7 +662,7 @@ export default function AdminAddVehicle() {
         </div>
 
         {/* SECTION 3: DOCUMENTATION & TITLE CREDENTIALS */}
-        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl space-y-5">
+        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-5">
           <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
             <FileCheck className="w-4 h-4 text-orange-400" />
             <h2 className="font-serif font-bold text-white text-base uppercase tracking-wider">
@@ -645,11 +727,11 @@ export default function AdminAddVehicle() {
 
             <div>
               <label className="block text-[10.5px] uppercase font-mono tracking-wider text-zinc-400 mb-1.5">
-                Chassis Number / VIN
+                Chassis Number / VIN (Optional)
               </label>
               <input 
                 type="text" 
-                placeholder="e.g. JKAZX1000PA089211"
+                placeholder="Optional"
                 value={formData.chassisNumber}
                 onChange={e => setFormData({ ...formData, chassisNumber: e.target.value.toUpperCase() })}
                 className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all font-mono"
@@ -658,11 +740,11 @@ export default function AdminAddVehicle() {
 
             <div>
               <label className="block text-[10.5px] uppercase font-mono tracking-wider text-zinc-400 mb-1.5">
-                Engine Number
+                Engine Number (Optional)
               </label>
               <input 
                 type="text" 
-                placeholder="e.g. ZXT00NE091823"
+                placeholder="Optional"
                 value={formData.engineNumber}
                 onChange={e => setFormData({ ...formData, engineNumber: e.target.value.toUpperCase() })}
                 className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all font-mono"
@@ -672,7 +754,7 @@ export default function AdminAddVehicle() {
         </div>
 
         {/* SECTION 4: PRICING & MARGIN */}
-        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl space-y-5">
+        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-5">
           <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
             <DollarSign className="w-4 h-4 text-orange-400" />
             <h2 className="font-serif font-bold text-white text-base uppercase tracking-wider">
@@ -717,7 +799,7 @@ export default function AdminAddVehicle() {
         </div>
 
         {/* SECTION 5: MULTI-ANGLE BIKE PHOTO UPLOAD */}
-        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl space-y-6">
+        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-6">
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <div className="flex items-center space-x-2.5">
               <Camera className="w-4 h-4 text-orange-400" />
@@ -725,10 +807,32 @@ export default function AdminAddVehicle() {
                 5. Motorcycle Gallery Upload (Supabase Storage)
               </h2>
             </div>
-            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">
-              {images.length} Photos Uploaded
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">
+                {images.length} Photos Uploaded
+              </span>
+              <span className="text-[9.5px] font-mono text-orange-400 uppercase bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded">
+                Optional for Draft
+              </span>
+            </div>
           </div>
+
+          {/* Quick Option to save as draft without photos */}
+          {images.length === 0 && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-zinc-900/60 border border-white/10 rounded-xl">
+              <div>
+                <p className="text-white text-xs font-bold">Save as Draft without uploading photos?</p>
+                <p className="text-zinc-400 text-[11px] mt-0.5">Photos are not required for drafts. You can save now and upload photos later.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-xs font-mono uppercase font-bold tracking-wider transition-colors shrink-0 border border-white/10"
+              >
+                Save Draft Without Photos
+              </button>
+            </div>
+          )}
 
           {/* Recommended Angles Guide */}
           <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3.5">
@@ -822,38 +926,38 @@ export default function AdminAddVehicle() {
           )}
         </div>
 
-        {/* SECTION 6: DESCRIPTION & INSPECTION NOTES */}
-        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl space-y-5">
+        {/* SECTION 6: DESCRIPTION & NOTES - Plain fields */}
+        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-5">
           <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
             <ShieldCheck className="w-4 h-4 text-orange-400" />
             <h2 className="font-serif font-bold text-white text-base uppercase tracking-wider">
-              6. Inspection Notes & Customer Description
+              6. Description & Notes
             </h2>
           </div>
 
           <div className="space-y-4 text-xs">
             <div>
               <label className="block text-[10.5px] uppercase font-mono tracking-wider text-zinc-400 mb-1.5">
-                50-Point Technical Inspection Notes
+                Description
               </label>
               <textarea 
-                rows={3}
-                placeholder="e.g. Compression test verified, brake pads 85%, chain-sprocket inspected, zero oil leaks, battery health 100%..."
-                value={formData.inspectionNotes}
-                onChange={e => setFormData({ ...formData, inspectionNotes: e.target.value })}
+                rows={4}
+                placeholder="Enter description..."
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all font-sans"
               />
             </div>
 
             <div>
               <label className="block text-[10.5px] uppercase font-mono tracking-wider text-zinc-400 mb-1.5">
-                Public Customer Description
+                Notes
               </label>
               <textarea 
-                rows={4}
-                placeholder="e.g. Meticulously maintained, single enthusiast owner, full service history from authorized showroom..."
-                value={formData.description}
-                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                placeholder="Enter notes..."
+                value={formData.inspectionNotes}
+                onChange={e => setFormData({ ...formData, inspectionNotes: e.target.value })}
                 className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all font-sans"
               />
             </div>
@@ -884,9 +988,9 @@ export default function AdminAddVehicle() {
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
-              type="submit"
-              onClick={() => setFormData(prev => ({ ...prev, status: 'Draft' }))}
-              className="flex-1 sm:flex-initial px-6 py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-mono uppercase font-bold tracking-widest transition-all"
+              type="button"
+              onClick={handleSaveDraft}
+              className="flex-1 sm:flex-initial px-6 py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-mono uppercase font-bold tracking-widest transition-all border border-white/10"
             >
               Save as Draft
             </button>

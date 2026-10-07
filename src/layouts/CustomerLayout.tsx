@@ -129,8 +129,8 @@ export default function CustomerLayout() {
         </div>
       )}
 
-      {/* Global Background - Showroom Backdrop */}
-      <div className="fixed top-0 bottom-0 left-0 right-0 z-0 bg-[#070709] overflow-hidden pointer-events-none flex items-center justify-center">
+      {/* Global Background - Showroom Backdrop: fixed across entire viewport */}
+      <div className="fixed inset-0 z-0 bg-[#070709] overflow-hidden pointer-events-none flex items-center justify-center">
         <picture className="absolute inset-0 w-full h-full">
           <source media="(max-width: 767px)" srcSet={heroMobileImage} />
           <img 
@@ -138,11 +138,11 @@ export default function CustomerLayout() {
             alt="Patel Motors Showroom" 
             loading="eager" 
             decoding="async" 
-            className="w-full h-full object-cover object-center" 
+            className="w-full h-full object-cover object-top md:object-center" 
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement;
-              if (target.src.includes('patel-hero-desktop.png')) {
-                target.src = '/Patel%20Motors%20Premium%20Bike%20Showcase.png';
+              if (target.src.includes('patel_hero_laptop.png')) {
+                target.src = '/patel-hero-desktop.png';
               } else if (!target.src.includes('unsplash.com')) {
                 target.src = FALLBACK_HERO_DESKTOP;
               }
@@ -152,9 +152,9 @@ export default function CustomerLayout() {
         {/* Crystal-clear Base Gradient for Hero */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30 pointer-events-none" />
 
-        {/* Complete Frosted Glass Layer - Activated on scroll or on non-home pages */}
+        {/* Scrim layer upon scrolling: keeps showroom background image 10 percent visible */}
         <div 
-          className={`absolute inset-0 bg-[#070709]/60 backdrop-blur-xl md:backdrop-blur-2xl transition-all duration-700 ease-out pointer-events-none ${
+          className={`absolute inset-0 bg-[#070709]/90 backdrop-blur-[2px] transition-all duration-500 ease-out pointer-events-none ${
             (!isHomePage || isScrolled) ? 'opacity-100' : 'opacity-0'
           }`} 
         />
@@ -164,174 +164,125 @@ export default function CustomerLayout() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[55vw] h-[55vw] bg-white/[0.015] rounded-full blur-[180px] pointer-events-none z-2"></div>
       </div>
 
-      <div className="relative z-10 flex flex-col flex-grow min-h-screen">
-        {/* Main Navbar - Ultra-Rich Frosted Glass Header with Exact Visual Elements from Screenshot */}
-        <nav className={`sticky top-0 z-50 transition-all duration-500 ${
+      <div className="relative z-10 flex flex-col flex-grow min-h-screen overflow-x-hidden w-full max-w-full">
+        {/* Main Navbar - Solid Dark on mobile, frosted glass on desktop */}
+        <nav className={`sticky top-0 z-50 transition-all duration-500 bg-[#070709] md:bg-transparent overflow-x-hidden w-full max-w-full ${
           isScrolled 
             ? 'frost-nav-scrolled' 
             : 'frost-nav'
         } text-zinc-100`}>
 
-          <div className="container mx-auto max-w-7xl px-4 sm:px-6 py-3.5 sm:py-4 flex justify-between items-center">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3.5 flex justify-between items-center gap-3 sm:gap-4 h-[58px] sm:h-auto overflow-hidden">
             
-            {/* Left Side: Refined Branding Logo */}
-            <Link to="/" className="flex items-center gap-2.5 sm:gap-3 shrink-0 select-none group py-0.5">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-black group-hover:border-orange-400 transition-all duration-300 shadow-sm shrink-0">
-                <Bike className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-300 group-hover:scale-110" />
+            {/* Zone 1: Branding Logo (Typographic mark with refined spacing, bike logo removed) */}
+            <Link to="/" className="flex flex-col justify-center shrink-0 select-none group py-0.5">
+              <div className="flex flex-col sm:flex-row sm:items-baseline tracking-[0.16em] leading-tight">
+                <span className="font-sans text-[13.5px] sm:text-lg font-extrabold text-white uppercase group-hover:text-orange-400 transition-colors tracking-[0.2em]">
+                  PATEL
+                </span>
+                <span className="font-sans text-[11px] sm:text-base font-bold text-zinc-300 uppercase sm:ml-1.5 group-hover:text-white transition-colors tracking-[0.22em] mt-0.5 sm:mt-0">
+                  MOTORS
+                </span>
               </div>
-              <div className="flex flex-col justify-center">
-                <div className="flex items-baseline tracking-[0.16em] leading-none">
-                  <span className="font-cinzel text-base sm:text-lg font-bold text-white uppercase group-hover:text-orange-400 transition-colors">
-                    PATEL
-                  </span>
-                  <span className="font-cinzel text-base sm:text-lg font-medium text-zinc-300 uppercase ml-1.5 group-hover:text-white transition-colors">
-                    MOTORS
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-[8.5px] sm:text-[9px] font-sans tracking-[0.24em] text-orange-400 uppercase font-semibold">
-                    MUMBAI
-                  </span>
-                  <span className="text-zinc-600 text-[8px]">•</span>
-                  <span className="text-[8px] sm:text-[8.5px] font-sans tracking-[0.16em] text-zinc-400 uppercase font-medium">
-                    PRE-OWNED BIKES
-                  </span>
-                </div>
+              <div className="hidden sm:flex items-center gap-1.5 mt-1 whitespace-nowrap">
+                <span className="text-[8.5px] sm:text-[9px] font-sans tracking-[0.24em] text-orange-400 uppercase font-semibold">
+                  MUMBAI
+                </span>
+                <span className="text-zinc-600 text-[8px]">•</span>
+                <span className="text-[8px] sm:text-[8.5px] font-sans tracking-[0.16em] text-zinc-400 uppercase font-medium">
+                  PRE-OWNED BIKES
+                </span>
               </div>
             </Link>
 
-            {/* Right/Middle Side: Frosted Glass Icons & Navigation Links matching user screenshot */}
-            <div className="flex items-center space-x-3 sm:space-x-5 md:space-x-7">
-              
-              {/* Desktop Phone Number with Circular Frosted Icon */}
-              <div className="hidden md:flex items-center space-x-3 text-xs tracking-wider font-sans text-zinc-200">
-                <a 
-                  href="tel:+917400113999" 
-                  className="flex items-center group font-medium hover:text-white transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full frost-pill flex items-center justify-center mr-2.5 shrink-0 text-zinc-200 group-hover:text-white">
-                    <Phone className="w-3.5 h-3.5 stroke-[1.5]" />
-                  </div>
-                  <span className="text-zinc-200 font-medium tracking-wide text-[13px] font-sans">+91 74001 13999</span>
-                </a>
-              </div>
+            {/* Zone 2: Desktop Navigation Links (Centered, roomy, non-wrapping) */}
+            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 text-[12px] xl:text-[12.5px] tracking-[0.14em] uppercase font-sans font-semibold whitespace-nowrap">
+              <Link 
+                to="/" 
+                className={`relative py-1.5 transition-all duration-300 ${
+                  location.pathname === '/' 
+                    ? 'text-white font-bold' 
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                HOME
+                {location.pathname === '/' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
+                )}
+              </Link>
+              <Link 
+                to="/inventory" 
+                className={`relative py-1.5 transition-all duration-300 ${
+                  location.pathname.startsWith('/inventory') 
+                    ? 'text-white font-bold' 
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                BROWSE BIKES
+                {location.pathname.startsWith('/inventory') && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
+                )}
+              </Link>
+              <Link 
+                to="/sell" 
+                className={`relative py-1.5 transition-all duration-300 ${
+                  location.pathname === '/sell' 
+                    ? 'text-white font-bold' 
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                SELL YOUR BIKE
+                {location.pathname === '/sell' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
+                )}
+              </Link>
+              <Link 
+                to="/about" 
+                className={`relative py-1.5 transition-all duration-300 ${
+                  location.pathname === '/about' 
+                    ? 'text-white font-bold' 
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                ABOUT
+                {location.pathname === '/about' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
+                )}
+              </Link>
+              <a 
+                href="#contact" 
+                className="relative py-1.5 text-zinc-400 hover:text-white transition-all duration-300"
+              >
+                CONTACT
+              </a>
+            </nav>
+
+            {/* Zone 3: Right Quick Action Cluster */}
+            <div className="hidden lg:flex items-center space-x-3 shrink-0">
+              {/* Desktop Phone Number Pill: Clean single-line layout that never wraps */}
+              <a 
+                href="tel:+917400113999" 
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full frost-pill hover:border-white/40 text-xs font-sans whitespace-nowrap group transition-all shrink-0"
+                title="Call Patel Motors: +91 74001 13999"
+              >
+                <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-orange-400 group-hover:text-white transition-colors">
+                  <Phone className="w-3 h-3 stroke-[2]" />
+                </div>
+                <span className="text-zinc-200 group-hover:text-white font-medium tracking-wide text-[12px] font-sans whitespace-nowrap">
+                  +91 74001 13999
+                </span>
+              </a>
 
               {/* Vertical Subtle Divider */}
-              <div className="hidden md:block h-5 w-[1px] bg-white/20"></div>
+              <div className="h-4 w-[1px] bg-white/20 shrink-0"></div>
 
-              {/* Frosted Rounded Pill Social & Location Icon Buttons */}
-              <div className="hidden md:flex items-center space-x-2.5">
-                <a 
-                  href="https://www.instagram.com/patelmotorsmumbai/" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#E4405F] hover:text-[#f77737] hover:border-[#E4405F]/50 transition-all"
-                  title="Instagram @patelmotorsmumbai"
-                >
-                  <Instagram className="w-3.5 h-3.5 stroke-[1.8]" />
-                </a>
+              {/* Frosted Social & Location Icons */}
+              <div className="flex items-center space-x-2 shrink-0">
                 <a 
                   href="https://wa.me/917400113999" 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-orange-300 hover:border-[#25D366]/50 transition-all"
-                  title="WhatsApp Assistant"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 stroke-[1.8]" />
-                </a>
-                <a 
-                  href="https://maps.google.com/?q=Patel+Motors+Mulund+West+Mumbai" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#EA4335] hover:text-red-400 hover:border-[#EA4335]/50 transition-all"
-                  title="Google Location & Showroom"
-                >
-                  <MapPin className="w-3.5 h-3.5 stroke-[1.8]" />
-                </a>
-              </div>
-
-              {/* Desktop Navigation Links matching exact typography & underline in screenshot */}
-              <div className="hidden md:flex items-center space-x-7 lg:space-x-8 text-[12.5px] tracking-[0.14em] uppercase font-sans font-semibold">
-                <Link 
-                  to="/" 
-                  className={`relative py-1.5 transition-all duration-300 ${
-                    location.pathname === '/' 
-                      ? 'text-white font-bold' 
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  HOME
-                  {location.pathname === '/' && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
-                  )}
-                </Link>
-                <Link 
-                  to="/inventory" 
-                  className={`relative py-1.5 transition-all duration-300 ${
-                    location.pathname.startsWith('/inventory') 
-                      ? 'text-white font-bold' 
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  BROWSE BIKES
-                  {location.pathname.startsWith('/inventory') && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
-                  )}
-                </Link>
-                <Link 
-                  to="/sell" 
-                  className={`relative py-1.5 transition-all duration-300 ${
-                    location.pathname === '/sell' 
-                      ? 'text-white font-bold' 
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  SELL YOUR BIKE
-                  {location.pathname === '/sell' && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
-                  )}
-                </Link>
-                <Link 
-                  to="/about" 
-                  className={`relative py-1.5 transition-all duration-300 ${
-                    location.pathname === '/about' 
-                      ? 'text-white font-bold' 
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  ABOUT
-                  {location.pathname === '/about' && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full"></span>
-                  )}
-                </Link>
-                <a 
-                  href="#contact" 
-                  className="relative py-1.5 text-zinc-400 hover:text-white transition-all duration-300"
-                >
-                  CONTACT
-                </a>
-                <Link
-                  to="/dealer-management"
-                  className="ml-2 px-3 py-1.5 rounded-full border border-white/20 hover:border-white text-zinc-300 hover:text-white text-[10.5px] font-mono tracking-wider uppercase transition-all bg-white/[0.04] hover:bg-white/10"
-                >
-                  Dealer Portal ↗
-                </Link>
-              </div>
-
-              {/* Mobile Quick Action Buttons: Call, WhatsApp, Instagram, Maps, & Menu Toggle */}
-              <div className="flex md:hidden items-center space-x-1.5 sm:space-x-2">
-                <a 
-                  href="tel:+917400113999" 
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-colors"
-                  title="Call Showroom"
-                >
-                  <Phone className="w-3.5 h-3.5 stroke-[1.5]" />
-                </a>
-                <a 
-                  href="https://wa.me/917400113999" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-orange-300 hover:border-[#25D366]/50 transition-colors"
+                  className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-white hover:border-[#25D366]/60 transition-all shrink-0"
                   title="WhatsApp"
                 >
                   <MessageCircle className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -340,7 +291,7 @@ export default function CustomerLayout() {
                   href="https://www.instagram.com/patelmotorsmumbai/" 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full frost-pill flex items-center justify-center text-[#E4405F] hover:text-[#f77737] hover:border-[#E4405F]/50 transition-colors"
+                  className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#E4405F] hover:text-[#f77737] hover:border-[#E4405F]/60 transition-all shrink-0"
                   title="Instagram @patelmotorsmumbai"
                 >
                   <Instagram className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -349,26 +300,63 @@ export default function CustomerLayout() {
                   href="https://maps.google.com/?q=Patel+Motors+Mulund+West+Mumbai" 
                   target="_blank" 
                   rel="noreferrer" 
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full frost-pill flex items-center justify-center text-[#EA4335] hover:text-red-400 hover:border-[#EA4335]/50 transition-colors"
-                  title="Showroom Location & Directions"
+                  className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#EA4335] hover:text-red-400 hover:border-[#EA4335]/60 transition-all shrink-0"
+                  title="Google Location & Showroom"
                 >
                   <MapPin className="w-3.5 h-3.5 stroke-[1.8]" />
                 </a>
-                <button 
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white ml-0.5 transition-colors" 
-                  onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                  aria-label="Toggle menu"
-                >
-                  {isMenuOpen ? <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Menu className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                </button>
               </div>
 
+              {/* Dealer Portal Badge */}
+              <Link
+                to="/dealer-management"
+                className="ml-1 px-3 py-1.5 rounded-full border border-white/20 hover:border-white text-zinc-300 hover:text-white text-[10.5px] font-mono tracking-wider uppercase transition-all bg-white/[0.04] hover:bg-white/10 whitespace-nowrap shrink-0"
+              >
+                Dealer Portal ↗
+              </Link>
             </div>
+
+            {/* Mobile / Compact Quick Actions (< lg) - Spread out with comfortable breathing room */}
+            <div className="flex lg:hidden items-center space-x-2.5 sm:space-x-3.5 shrink-0">
+              <a 
+                href="tel:+917400113999" 
+                className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
+                title="Call Showroom"
+              >
+                <Phone className="w-3.5 h-3.5 stroke-[1.8] text-orange-400" />
+              </a>
+              <a 
+                href="https://wa.me/917400113999" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
+                title="WhatsApp"
+              >
+                <MessageCircle className="w-3.5 h-3.5 stroke-[1.8]" />
+              </a>
+              <a 
+                href="https://www.instagram.com/patelmotorsmumbai/" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#E4405F] hover:text-[#f77737] transition-all hover:scale-105 active:scale-95 shrink-0"
+                title="Instagram @patelmotorsmumbai"
+              >
+                <Instagram className="w-3.5 h-3.5 stroke-[1.8]" />
+              </a>
+              <button 
+                className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0" 
+                onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </button>
+            </div>
+
           </div>
 
-          {/* Mobile Navigation Drawer with Translucent Frosted Glass Styling */}
+          {/* Mobile / Tablet Navigation Drawer with Translucent Frosted Glass Styling */}
           {isMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 right-0 bg-black/75 backdrop-blur-2xl border-b border-white/15 border-t border-white/10 px-5 py-5 flex flex-col space-y-2 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-fade-in">
+            <div className="lg:hidden absolute top-full left-0 right-0 bg-black/85 backdrop-blur-2xl border-b border-white/15 border-t border-white/10 px-5 py-5 flex flex-col space-y-2 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-fade-in">
               <Link 
                 to="/" 
                 onClick={closeMenu} 
@@ -429,6 +417,15 @@ export default function CustomerLayout() {
                 <span>Contact</span>
               </a>
 
+              <Link 
+                to="/dealer-management" 
+                onClick={closeMenu} 
+                className="px-4 py-3 rounded-xl transition-all duration-200 text-xs font-mono tracking-wider uppercase text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-between border border-white/5"
+              >
+                <span>Dealer Portal</span>
+                <span className="text-[10px] text-zinc-500">↗</span>
+              </Link>
+
               {/* Mobile Menu Footer Details */}
               <div className="pt-3 mt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-sans text-zinc-400 px-2">
                 <a 
@@ -440,7 +437,9 @@ export default function CustomerLayout() {
                   <Instagram className="w-3.5 h-3.5 text-[#E4405F]" />
                   <span>@patelmotorsmumbai</span>
                 </a>
-                <span>+91 74001 13999</span>
+                <a href="tel:+917400113999" className="text-zinc-300 hover:text-white">
+                  +91 74001 13999
+                </a>
               </div>
             </div>
           )}
