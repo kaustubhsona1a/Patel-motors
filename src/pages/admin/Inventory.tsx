@@ -911,109 +911,137 @@ export default function AdminInventory() {
         document.body
       )}
 
-      {/* INVOICE PREVIEW & PRINT MODAL - Pristine Authentic Design */}
+      {/* INVOICE PREVIEW & PRINT MODAL - Fully visible on Mobile & Laptop */}
       {previewInvoiceBike && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto overflow-x-hidden p-1.5 sm:p-4 md:p-6 flex justify-center items-start sm:items-center">
           <div 
             onClick={() => setPreviewInvoiceBike(null)} 
             className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity" 
           />
-          <div className="bg-zinc-950 border border-white/20 rounded-2xl sm:rounded-3xl p-3 sm:p-6 max-w-4xl w-full relative z-10 shadow-2xl max-h-[94vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+          <div className="relative z-10 w-full max-w-4xl my-2 sm:my-8 bg-zinc-950 border border-white/20 rounded-xl sm:rounded-3xl p-2.5 sm:p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/10 mb-3 sm:mb-4">
               <div>
-                <span className="text-[9.5px] font-mono text-purple-400 uppercase tracking-widest font-bold block">
+                <span className="text-[9px] sm:text-[9.5px] font-mono text-orange-400 uppercase tracking-widest font-bold block">
                   Official Sale Receipt & Delivery Challan
                 </span>
-                <h3 className="text-base sm:text-xl font-serif font-bold text-white uppercase tracking-wider mt-0.5 truncate max-w-xs sm:max-w-md">
+                <h3 className="text-sm sm:text-xl font-serif font-bold text-white uppercase tracking-wider mt-0.5 truncate max-w-[190px] sm:max-w-md">
                   #{previewInvoiceBike.sale.invoiceNumber}
                 </h3>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 shrink-0">
                 <button
                   onClick={() => printInvoice(previewInvoiceBike.bike, previewInvoiceBike.sale)}
-                  className="px-3 sm:px-4 py-2 bg-white text-zinc-950 hover:bg-zinc-200 rounded-xl text-[11px] sm:text-xs font-mono uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 shadow-md"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-zinc-950 hover:bg-zinc-200 rounded-lg sm:rounded-xl text-[10.5px] sm:text-xs font-mono uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 shadow-md"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>Print / PDF</span>
                 </button>
                 <button 
-                  onClick={() => setPreviewInvoiceBike(null)}
+                  onClick={() => setPreviewInvoiceBike(null)} 
                   className="p-1.5 sm:p-2 text-zinc-400 hover:text-white bg-zinc-900 rounded-full border border-white/10"
+                  aria-label="Close invoice"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Embedded Invoice Render: Clean, Crisp, Professional */}
-            <div className="bg-white text-zinc-900 rounded-xl sm:rounded-2xl p-4 sm:p-7 shadow-inner overflow-x-auto text-[11px] sm:text-xs font-sans">
+            {/* Embedded Invoice Render: Clean, Crisp, 100% visible on mobile and desktop */}
+            <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
               {/* Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-3 mb-4 gap-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
-                  <div className="text-[9px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
+                  <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
+                  <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
                     Buy, Sell & Exchange Premium Pre-Owned Two Wheelers
                   </div>
-                  <div className="text-[10px] sm:text-[11px] text-zinc-600 mt-1.5 leading-snug">
-                    Showroom No. 4, L.B.S. Marg, Opp. Marathon Heights, Mulund West, Mumbai, MH - 400080<br />
-                    Phone: +91 98201 55443 / +91 74001 13999 | Email: sales@patelmotors.in<br />
+                  <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
+                    Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
+                    Phone: +91 84520 88500 | Email: sales@patelmotors.in<br />
                     GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
                   </div>
                 </div>
-                <div className="text-left sm:text-right font-mono shrink-0">
-                  <div className="inline-block bg-black text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1">
+                <div className="text-left sm:text-right font-mono shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-zinc-200">
+                  <div className="inline-block bg-black text-white text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1">
                     Tax / Sale Invoice & Challan
                   </div>
                   <div className="font-bold text-xs sm:text-sm text-black">#{previewInvoiceBike.sale.invoiceNumber}</div>
-                  <div className="text-zinc-600 text-[10px] sm:text-[11px] mt-0.5">Date: {previewInvoiceBike.sale.saleDate}</div>
-                  <div className="text-zinc-600 text-[10px] sm:text-[11px]">Time: {previewInvoiceBike.sale.deliveryTime || '11:00 AM IST'}</div>
-                  <div className="font-bold text-[10px] sm:text-[11px] mt-0.5 text-emerald-700">
+                  <div className="text-zinc-600 text-[9.5px] sm:text-[11px] mt-0.5">Date: {previewInvoiceBike.sale.saleDate}</div>
+                  <div className="text-zinc-600 text-[9.5px] sm:text-[11px]">Time: {previewInvoiceBike.sale.deliveryTime || '11:00 AM IST'}</div>
+                  <div className="font-bold text-[9.5px] sm:text-[11px] mt-0.5 text-emerald-700">
                     Status: {previewInvoiceBike.sale.paymentStatus}
                   </div>
                 </div>
               </div>
 
               {/* Two columns: Customer & Motorcycle Particulars */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
-                  <div className="text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1.5 border-b border-zinc-200 pb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                <div className="bg-zinc-50 p-2.5 sm:p-3 rounded-lg border border-zinc-200">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
                     1. Purchaser / Customer Details
                   </div>
                   <div className="font-bold text-xs sm:text-sm text-black">{previewInvoiceBike.sale.customerName}</div>
-                  <div className="text-[10.5px] text-zinc-700 mt-0.5">Phone: <strong>{previewInvoiceBike.sale.customerPhone}</strong></div>
+                  <div className="text-[10px] sm:text-[10.5px] text-zinc-700 mt-0.5">Phone: <strong>{previewInvoiceBike.sale.customerPhone}</strong></div>
                   {previewInvoiceBike.sale.customerEmail && (
-                    <div className="text-[10px] text-zinc-700">Email: {previewInvoiceBike.sale.customerEmail}</div>
+                    <div className="text-[9.5px] text-zinc-700">Email: {previewInvoiceBike.sale.customerEmail}</div>
                   )}
                   {previewInvoiceBike.sale.customerAddress && (
-                    <div className="text-[10px] text-zinc-700">Address: {previewInvoiceBike.sale.customerAddress}</div>
+                    <div className="text-[9.5px] text-zinc-700">Address: {previewInvoiceBike.sale.customerAddress}</div>
                   )}
                   {previewInvoiceBike.sale.customerIdentity && (
-                    <div className="text-[10px] text-zinc-700 font-mono mt-0.5">
-                      ID Proof (Aadhar/PAN): <strong>{previewInvoiceBike.sale.customerIdentity}</strong>
+                    <div className="text-[9.5px] text-zinc-700 font-mono mt-0.5">
+                      ID Proof: <strong>{previewInvoiceBike.sale.customerIdentity}</strong>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
-                  <div className="text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1.5 border-b border-zinc-200 pb-1">
+                <div className="bg-zinc-50 p-2.5 sm:p-3 rounded-lg border border-zinc-200">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
                     2. Motorcycle Particulars & RTO Record
                   </div>
                   <div className="font-bold text-xs sm:text-sm text-black">
                     {previewInvoiceBike.bike.year} {previewInvoiceBike.bike.make} {previewInvoiceBike.bike.model} {previewInvoiceBike.bike.variant ? `(${previewInvoiceBike.bike.variant})` : ''}
                   </div>
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-zinc-700 mt-1 font-mono">
-                    <div>Reg No: <strong className="text-black">{previewInvoiceBike.bike.registration || 'N/A'}</strong></div>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9.5px] sm:text-[10px] text-zinc-700 mt-1 font-mono">
+                    <div>Reg: <strong className="text-black">{previewInvoiceBike.bike.registration || 'N/A'}</strong></div>
                     <div>Odo: <strong className="text-black">{previewInvoiceBike.bike.mileage.toLocaleString('en-IN')} KM</strong></div>
-                    <div>Chassis: <span className="text-zinc-800">{previewInvoiceBike.bike.chassisNumber || 'Verified on VIN'}</span></div>
+                    <div>Chassis: <span className="text-zinc-800">{previewInvoiceBike.bike.chassisNumber || 'Verified'}</span></div>
                     <div>Engine: <span className="text-zinc-800">{previewInvoiceBike.bike.engineNumber || 'Verified'}</span></div>
-                    <div>Ownership: <span className="text-zinc-800">{previewInvoiceBike.bike.ownership || '1st Owner'}</span></div>
+                    <div>Owner: <span className="text-zinc-800">{previewInvoiceBike.bike.ownership || '1st Owner'}</span></div>
                     <div>Fuel: <span className="text-zinc-800">{previewInvoiceBike.bike.fuelType || 'Petrol'}</span></div>
                   </div>
                 </div>
               </div>
 
-              {/* Line Items Table */}
-              <div className="border border-zinc-200 rounded-lg overflow-hidden mb-4">
+              {/* Line Items - Mobile Card View (sm:hidden) */}
+              <div className="block sm:hidden bg-zinc-50 p-2.5 rounded-lg border border-zinc-200 mb-3 space-y-2">
+                <div>
+                  <div className="text-[8px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+                    3. Goods & Vehicle Description
+                  </div>
+                  <div className="font-bold text-xs text-black">
+                    {previewInvoiceBike.bike.make} {previewInvoiceBike.bike.model} {previewInvoiceBike.bike.variant || ''}
+                  </div>
+                  <div className="text-[9px] text-zinc-600 mt-0.5">
+                    {previewInvoiceBike.bike.year} • {previewInvoiceBike.bike.mileage.toLocaleString('en-IN')} KM • 50-Point Inspection Verified
+                  </div>
+                  <div className="flex justify-between items-center mt-1.5 pt-1 border-t border-zinc-200">
+                    <span className="text-[10px] text-zinc-600">Agreed Bike Price:</span>
+                    <span className="font-mono font-bold text-black text-xs">{formatPrice(previewInvoiceBike.sale.salePrice)}</span>
+                  </div>
+                </div>
+                {(previewInvoiceBike.sale.rtoCharges || previewInvoiceBike.sale.taxAmount) ? (
+                  <div className="pt-1.5 border-t border-dashed border-zinc-200 flex justify-between items-center text-[10px]">
+                    <span className="text-zinc-600">RTO Transfer & Documentation:</span>
+                    <span className="font-mono font-bold text-black text-xs">
+                      {formatPrice(previewInvoiceBike.sale.rtoCharges || previewInvoiceBike.sale.taxAmount || 0)}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Line Items Table - Desktop & Tablet View (hidden sm:block) */}
+              <div className="hidden sm:block border border-zinc-200 rounded-lg overflow-hidden mb-4">
                 <table className="w-full text-left">
                   <thead className="bg-zinc-900 text-white text-[9.5px] uppercase font-mono font-bold tracking-wider">
                     <tr>
@@ -1057,9 +1085,9 @@ export default function AdminInventory() {
               </div>
 
               {/* Settlement and Totals */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div className="bg-zinc-50 p-2.5 rounded-lg border border-zinc-200 text-[10.5px]">
-                  <div className="text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                <div className="bg-zinc-50 p-2 sm:p-2.5 rounded-lg border border-zinc-200 text-[10px] sm:text-[10.5px]">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
                     Settlement & Payment Breakdown
                   </div>
                   <div className="space-y-1 mt-1 text-zinc-700">
@@ -1079,7 +1107,7 @@ export default function AdminInventory() {
                         <strong>{previewInvoiceBike.sale.hypothecation}</strong>
                       </div>
                     )}
-                    <div className="pt-1.5 border-t border-dashed border-zinc-200 text-[10px]">
+                    <div className="pt-1.5 border-t border-dashed border-zinc-200 text-[9.5px] sm:text-[10px]">
                       <span className="text-zinc-500">Amount in Words:</span><br />
                       <strong className="text-black font-serif italic">
                         {numberToWordsIndian(previewInvoiceBike.sale.finalAmount)}
@@ -1088,7 +1116,7 @@ export default function AdminInventory() {
                   </div>
                 </div>
 
-                <div className="bg-white p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[11px] font-mono">
+                <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
                   <div className="flex justify-between text-zinc-600">
                     <span>Agreed Vehicle Price:</span>
                     <span>{formatPrice(previewInvoiceBike.sale.salePrice)}</span>
@@ -1105,21 +1133,21 @@ export default function AdminInventory() {
                       <span>-{formatPrice(previewInvoiceBike.sale.discount!)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
+                  <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
                     <span>Total Net Invoice:</span>
                     <span>{formatPrice(previewInvoiceBike.sale.finalAmount)}</span>
                   </div>
-                  <div className="flex justify-between text-emerald-700 font-bold text-[10.5px]">
+                  <div className="flex justify-between text-emerald-700 font-bold text-[10px] sm:text-[10.5px]">
                     <span>Amount Paid ({previewInvoiceBike.sale.paymentMethod}):</span>
                     <span>{formatPrice(previewInvoiceBike.sale.amountPaid)}</span>
                   </div>
                   {previewInvoiceBike.sale.balanceDue > 0 ? (
-                    <div className="flex justify-between text-red-600 font-bold text-[10.5px]">
+                    <div className="flex justify-between text-red-600 font-bold text-[10px] sm:text-[10.5px]">
                       <span>Balance Due:</span>
                       <span>{formatPrice(previewInvoiceBike.sale.balanceDue)}</span>
                     </div>
                   ) : (
-                    <div className="flex justify-between text-emerald-700 font-bold text-[10px]">
+                    <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
                       <span>Balance Due:</span>
                       <span>NIL (Fully Settled)</span>
                     </div>
@@ -1128,21 +1156,21 @@ export default function AdminInventory() {
               </div>
 
               {/* Legal Delivery Undertaking */}
-              <div className="border-t border-zinc-200 pt-2.5 text-[9px] text-zinc-500 leading-relaxed">
-                <strong>Delivery & Legal Undertaking:</strong> The purchaser acknowledges physical delivery and satisfactory inspection of the motorcycle. From date ({previewInvoiceBike.sale.saleDate}) and time ({previewInvoiceBike.sale.deliveryTime || '11:00 AM IST'}) of handover, all traffic fines, e-challans, third-party and Motor Vehicles Act liabilities rest exclusively with the purchaser. Patel Motors warrants clear unencumbered title and non-accidental chassis.
+              <div className="border-t border-zinc-200 pt-2 text-[8.5px] sm:text-[9px] text-zinc-500 leading-relaxed">
+                <strong>Delivery & Legal Undertaking:</strong> The purchaser acknowledges physical delivery and satisfactory inspection of the motorcycle. From date ({previewInvoiceBike.sale.saleDate}) and time ({previewInvoiceBike.sale.deliveryTime || '11:00 AM IST'}) of handover, all traffic fines, e-challans, and Motor Vehicles Act liabilities rest with the purchaser. Patel Motors warrants clear unencumbered title.
               </div>
 
               {/* Dual Signatures */}
-              <div className="border-t border-dashed border-zinc-300 pt-3 mt-3 flex justify-between items-end text-[10px] text-zinc-500">
-                <div className="text-center w-36">
+              <div className="border-t border-dashed border-zinc-300 pt-2.5 mt-2.5 flex justify-between items-end text-[9px] sm:text-[10px] text-zinc-500">
+                <div className="text-center w-28 sm:w-36">
                   <div className="w-full border-b border-zinc-400 mb-1"></div>
                   <div className="font-bold text-black uppercase">Purchaser Signature</div>
-                  <div className="text-[9px]">{previewInvoiceBike.sale.customerName}</div>
+                  <div className="text-[8.5px] sm:text-[9px] truncate">{previewInvoiceBike.sale.customerName}</div>
                 </div>
-                <div className="text-center w-36">
+                <div className="text-center w-28 sm:w-36">
                   <div className="w-full border-b border-zinc-400 mb-1"></div>
                   <div className="font-bold text-black uppercase">For PATEL MOTORS</div>
-                  <div className="text-[9px]">Authorized Signatory</div>
+                  <div className="text-[8.5px] sm:text-[9px]">Authorized Signatory</div>
                 </div>
               </div>
             </div>

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useVehicles } from '../../context/VehicleContext';
-import { Trash2 } from 'lucide-react';
+import { Trash2, MessageCircle } from 'lucide-react';
 import { SmartImage } from '../../components/SmartImage';
+import { createWhatsAppUrl, formatDealerFollowUpMessage } from '../../lib/whatsapp';
 
 export default function AdminLeads() {
   const { leads, updateLeadStatus, deleteLead } = useVehicles();
@@ -76,7 +77,17 @@ export default function AdminLeads() {
                         </select>
                       </td>
                       <td className="px-6 py-4 text-zinc-400">{lead.date}</td>
-                      <td className="px-6 py-4 text-right space-x-3">
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <a 
+                          href={createWhatsAppUrl(lead.phone, formatDealerFollowUpMessage(lead.name, lead.car))}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-emerald-400 hover:text-emerald-300 font-semibold font-mono uppercase tracking-wider transition-colors border border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/10 px-2 py-1 rounded inline-flex items-center gap-1"
+                          title="Open WhatsApp chat with lead"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          <span>WhatsApp</span>
+                        </a>
                         <a href={`tel:${lead.phone}`} className="text-[10px] text-white hover:text-zinc-300 font-semibold font-mono uppercase tracking-wider transition-colors border border-white/20 hover:border-white px-2 py-1 rounded">Call</a>
                         <button 
                           onClick={() => setLeadToDelete(lead)}
@@ -124,12 +135,12 @@ export default function AdminLeads() {
                   </div>
 
                   {/* Actions & Status Dropdown Row */}
-                  <div className="flex items-center justify-between gap-3 pt-2">
+                  <div className="flex items-center justify-between gap-2 pt-2">
                     <div className="flex-1 min-w-0">
                       <select 
                         value={lead.status}
                         onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                        className={`w-full py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest border outline-none cursor-pointer bg-zinc-950 focus:border-white transition-all font-mono ${
+                        className={`w-full py-2 px-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border outline-none cursor-pointer bg-zinc-950 focus:border-white transition-all font-mono ${
                           lead.status === 'New Lead' ? 'border-white/20 text-white bg-white/10' :
                           lead.status === 'Contacted' ? 'border-zinc-700 text-zinc-400' :
                           lead.status === 'Negotiating' ? 'border-zinc-700 text-zinc-300' :
@@ -145,10 +156,19 @@ export default function AdminLeads() {
                       </select>
                     </div>
 
-                    <div className="flex items-center space-x-2 shrink-0">
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <a 
+                        href={createWhatsAppUrl(lead.phone, formatDealerFollowUpMessage(lead.name, lead.car))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 rounded-lg text-[10px] transition-all flex items-center justify-center"
+                        title="Chat on WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                      </a>
                       <a 
                         href={`tel:${lead.phone}`} 
-                        className="px-3.5 py-2 bg-white/10 hover:bg-white border border-white/20 text-white hover:text-zinc-950 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all"
+                        className="px-2.5 py-2 bg-white/10 hover:bg-white border border-white/20 text-white hover:text-zinc-950 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all"
                       >
                         Call
                       </a>

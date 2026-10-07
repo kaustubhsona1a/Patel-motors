@@ -20,6 +20,13 @@ export interface Lead {
   status: string;
   date: string;
   images?: string[];
+  make?: string;
+  model?: string;
+  year?: number;
+  mileage?: number;
+  ownership?: string;
+  expectedPrice?: number;
+  notes?: string;
 }
 
 export interface SiteConfig {
@@ -31,6 +38,7 @@ export interface SiteConfig {
   homeHeroMobileVideo?: string;
   homeHeroType?: 'video' | 'image';
   logo: string;
+  whatsappNumber?: string;
   clientDeliveries?: string[];
   instagramReels?: string[];
 }
@@ -75,6 +83,7 @@ const DEFAULT_CONFIG: SiteConfig = {
   homeHeroMobileVideo: '',
   homeHeroType: 'image',
   logo: '/logo.svg',
+  whatsappNumber: '918452088500',
   clientDeliveries: [],
   instagramReels: []
 };
@@ -194,15 +203,25 @@ export function toDbPayload(v: any) {
     model: v.model || '',
     variant: v.variant || null,
     year: typeof v.year === 'number' ? v.year : Number(v.year || new Date().getFullYear()),
+    registration_year: v.registrationYear || v.registration_year || null,
     price: typeof v.price === 'number' ? v.price : Number(v.price || 0),
+    purchase_price: v.purchasePrice !== undefined && v.purchasePrice !== null ? Number(v.purchasePrice) : (v.purchase_price !== undefined && v.purchase_price !== null ? Number(v.purchase_price) : null),
     mileage: typeof v.mileage === 'number' ? v.mileage : Number(v.mileage || 0),
     fuel_type: v.fuelType || v.fuel_type || 'Petrol',
     transmission: v.transmission || 'Manual',
     body_type: v.bodyType || v.body_type || 'Superbike',
     engine: v.engine || (v.engineCC ? `${v.engineCC} cc` : null),
+    engine_cc: v.engineCC || v.engine_cc || null,
     color: v.color || null,
     ownership: v.ownership || null,
     registration: v.registration || null,
+    insurance_status: v.insuranceStatus || v.insurance_status || null,
+    rc_status: v.rcStatus || v.rc_status || null,
+    service_history: v.serviceHistory || v.service_history || null,
+    condition: v.condition || null,
+    location: v.location || 'Mumbai',
+    chassis_number: v.chassisNumber || v.chassis_number || null,
+    engine_number: v.engineNumber || v.engine_number || null,
     status: v.status || 'Available',
     featured: v.featured !== undefined ? v.featured : false,
     description: v.description || null,
@@ -210,6 +229,7 @@ export function toDbPayload(v: any) {
     inspection_notes: v.inspection_notes || v.inspectionNotes || null,
     images: Array.isArray(v.images) ? v.images : [],
     features: combinedFeatures,
+    sale_info: v.saleInfo || v.sale_info || null,
     is_deleted: v.deleted !== undefined ? v.deleted : (v.is_deleted !== undefined ? v.is_deleted : false)
   };
 }
@@ -730,7 +750,14 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
               car: carMsg,
               status: l.status || 'New Lead',
               date: l.created_at ? l.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-              images: images
+              images: images,
+              make: l.make || undefined,
+              model: l.model || undefined,
+              year: l.year || undefined,
+              mileage: l.mileage || undefined,
+              ownership: l.ownership || undefined,
+              expectedPrice: l.expected_price !== null && l.expected_price !== undefined ? Number(l.expected_price) : undefined,
+              notes: l.notes || undefined
             };
           });
           setLeads(mappedLeads);
@@ -901,16 +928,30 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
         message: `${newLead.car}${serializedImagesStr}`,
         status: newLead.status,
         created_at: new Date().toISOString(),
-        images: imagesArray
+        images: imagesArray,
+        make: newLead.make || null,
+        model: newLead.model || null,
+        year: newLead.year || null,
+        mileage: newLead.mileage || null,
+        ownership: newLead.ownership || null,
+        expected_price: newLead.expectedPrice || null,
+        notes: newLead.notes || null
       };
       
       console.log('[SUPABASE LEAD INSERT] Attempting Lead Insert:', dbLead);
       let { error } = await supabase.from('leads').insert([dbLead]);
       
       if (error && (error.message?.includes('column') || error.code === '42703')) {
-        console.warn('[SUPABASE LEAD INSERT RETRY] Column "images" not supported on leads table. Retrying with serialised message column fallback...');
-        const retryLead = { ...dbLead };
-        delete retryLead.images;
+        console.warn('[SUPABASE LEAD INSERT RETRY] Extra columns not supported on leads table. Retrying with baseline payload...');
+        const retryLead = {
+          id: ensureUUID(newLead.id),
+          customer_name: newLead.name,
+          phone: newLead.phone,
+          email: newLead.email || null,
+          message: `${newLead.car}${serializedImagesStr}`,
+          status: newLead.status,
+          created_at: new Date().toISOString()
+        };
         const retryQuery = await supabase.from('leads').insert([retryLead]);
         error = retryQuery.error;
       }

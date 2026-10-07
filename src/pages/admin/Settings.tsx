@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useVehicles, sanitizeHeroImage, sanitizeHeroMobileImage, PATEL_HERO_DESKTOP, PATEL_HERO_MOBILE } from '../../context/VehicleContext';
-import { UploadCloud, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, AlertCircle, Wifi, WifiOff, Check, RefreshCw, CheckCircle2, X, Cloud } from 'lucide-react';
+import { UploadCloud, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, AlertCircle, Wifi, WifiOff, Check, RefreshCw, CheckCircle2, X, Cloud, Database, Code, Copy, ExternalLink, Download } from 'lucide-react';
 import { uploadImageToStorage, cleanupLegacyImageVariants, supabase } from '../../lib/supabase';
 import { SmartImage } from '../../components/SmartImage';
+import { SUPABASE_SETUP_SQL } from '../../data/supabaseSql';
 export default function AdminSettings() {
   const { siteConfig, updateSiteConfig, refreshInventory } = useVehicles();
   const [success, setSuccess] = useState('');
@@ -12,33 +14,59 @@ export default function AdminSettings() {
 
   const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'not_configured' | 'error'>('checking');
   const [supabaseErrorMsg, setSupabaseErrorMsg] = useState('');
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  const checkConnection = async () => {
+    setSupabaseStatus('checking');
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON;
+    
+    if (!url || !key || url === 'YOUR_SUPABASE_URL' || url === 'https://placeholder.supabase.co' || url.includes('placeholder')) {
+      setSupabaseStatus('not_configured');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('metadata_versions').select('key').limit(1);
+      if (error) {
+        setSupabaseStatus('error');
+        setSupabaseErrorMsg(error.message || JSON.stringify(error));
+      } else {
+        setSupabaseStatus('connected');
+        setSupabaseErrorMsg('');
+      }
+    } catch (err: any) {
+      setSupabaseStatus('error');
+      setSupabaseErrorMsg(err?.message || String(err));
+    }
+  };
 
   React.useEffect(() => {
-    const checkConnection = async () => {
-      const url = import.meta.env.VITE_SUPABASE_URL;
-      const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!url || !key || url === 'YOUR_SUPABASE_URL' || url === 'https://placeholder.supabase.co' || url.includes('placeholder')) {
-        setSupabaseStatus('not_configured');
-        return;
-      }
-
-      try {
-        const { error } = await supabase.from('metadata_versions').select('key').limit(1);
-        if (error) {
-          setSupabaseStatus('error');
-          setSupabaseErrorMsg(error.message || JSON.stringify(error));
-        } else {
-          setSupabaseStatus('connected');
-        }
-      } catch (err: any) {
-        setSupabaseStatus('error');
-        setSupabaseErrorMsg(err?.message || String(err));
-      }
-    };
-
     checkConnection();
   }, []);
+
+  const handleCopySql = async () => {
+    try {
+      await navigator.clipboard.writeText(SUPABASE_SETUP_SQL);
+      setCopiedSql(true);
+      setTimeout(() => setCopiedSql(false), 3000);
+    } catch (err) {
+      console.error('Failed to copy SQL:', err);
+    }
+  };
+
+  const handleDownloadSql = () => {
+    const blob = new Blob([SUPABASE_SETUP_SQL], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'patel_motors_supabase_setup.sql';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   
   const handleCleanupLegacyVariants = async () => {
     setIsCleaning(true);
@@ -69,6 +97,21 @@ export default function AdminSettings() {
   const [customHeroMobileImageUrl, setCustomHeroMobileImageUrl] = useState('');
   const [customHeroVideoUrl, setCustomHeroVideoUrl] = useState('');
   const [customHeroMobileVideoUrl, setCustomHeroMobileVideoUrl] = useState('');
+  const [customWhatsapp, setCustomWhatsapp] = useState(siteConfig.whatsappNumber || '918452088500');
+
+  React.useEffect(() => {
+    if (siteConfig.whatsappNumber) {
+      setCustomWhatsapp(siteConfig.whatsappNumber);
+    }
+  }, [siteConfig.whatsappNumber]);
+
+  const handleSaveWhatsApp = async () => {
+    if (!customWhatsapp.trim()) return;
+    const sanitized = customWhatsapp.replace(/\D/g, '');
+    await updateSiteConfig({ whatsappNumber: sanitized });
+    setSuccess('WhatsApp forwarding number updated successfully!');
+    setTimeout(() => setSuccess(''), 3000);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, key: 'logo' | 'aboutImage' | 'homeHeroVideo' | 'homeHeroMobileVideo' | 'homeHeroImage' | 'homeHeroMobileImage') => {
     if (e.target.files && e.target.files[0]) {
@@ -226,6 +269,76 @@ export default function AdminSettings() {
 
 
 
+      {/* Supabase Cloud Connection & SQL Setup Card */}
+      <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-5 sm:p-6 backdrop-blur-md shadow-xl space-y-4 font-sans">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm sm:text-base font-serif font-bold text-white uppercase tracking-wider">
+                  Supabase Database & Storage
+                </h2>
+                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-widest border ${
+                  supabaseStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' :
+                  supabaseStatus === 'not_configured' ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' :
+                  supabaseStatus === 'checking' ? 'bg-blue-500/20 text-blue-400 border-blue-500/40' :
+                  'bg-red-500/20 text-red-400 border-red-500/40'
+                }`}>
+                  {supabaseStatus === 'connected' ? '● Connected' :
+                   supabaseStatus === 'not_configured' ? '○ Offline / Cache' :
+                   supabaseStatus === 'checking' ? 'Testing...' :
+                   '⚠ Error'}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-1 font-sans">
+                {supabaseStatus === 'connected' 
+                  ? 'Connected to live Supabase project. Motorcycles, leads, settings & photos are synced.' 
+                  : supabaseStatus === 'not_configured'
+                  ? 'Running on high-speed browser cache. Configure VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY to sync cloud.'
+                  : `Connection issue: ${supabaseErrorMsg}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={checkConnection}
+              className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/15 rounded-xl text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Test Connection</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSqlModal(true)}
+              className="px-4 py-2 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+            >
+              <Code className="w-3.5 h-3.5" />
+              <span>Supabase SQL Script</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
+            <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">Database Tables</div>
+            <div className="text-white font-mono text-[11px]">vehicles, vehicle_images, leads, site_settings, metadata_versions</div>
+          </div>
+          <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
+            <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">Storage Buckets</div>
+            <div className="text-white font-mono text-[11px]">vehicle-images, site_settings (Public)</div>
+          </div>
+          <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
+            <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">SQL Setup File</div>
+            <div className="text-white font-mono text-[11px]">supabase/schema.sql (1-click ready)</div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-zinc-950/65 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl p-4 sm:p-6 md:p-8 space-y-10">
         
         {/* Logo Section */}
@@ -247,6 +360,38 @@ export default function AdminSettings() {
               </label>
             </div>
           </div>
+        </div>
+
+        <hr className="border-white/5" />
+
+        {/* WhatsApp Forwarding & Notification Number */}
+        <div className="border-l-2 border-[#25D366] pl-4">
+          <div className="flex items-center space-x-2 mb-1">
+            <h2 className="text-sm font-serif font-bold text-white uppercase tracking-widest">WhatsApp Forwarding Number</h2>
+            <span className="bg-[#25D366]/20 text-[#25D366] text-[8px] font-bold font-mono px-2 py-0.5 rounded tracking-wider uppercase border border-[#25D366]/30">Active</span>
+          </div>
+          <p className="text-zinc-400 text-[10px] uppercase font-mono tracking-wider mb-4">
+            Bike sell submissions from customers are forwarded to this WhatsApp number for appraisal.
+          </p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-lg">
+            <input
+              type="text"
+              placeholder="918452088500"
+              value={customWhatsapp}
+              onChange={(e) => setCustomWhatsapp(e.target.value)}
+              className="flex-grow bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white font-mono"
+            />
+            <button
+              type="button"
+              onClick={handleSaveWhatsApp}
+              className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold px-5 py-2.5 rounded-xl text-xs uppercase font-mono tracking-wider transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              Update Number
+            </button>
+          </div>
+          <p className="text-[10px] text-zinc-500 font-mono mt-1.5">
+            Format: 918452088500 (+91 84520 88500). Number with country code without + or spaces.
+          </p>
         </div>
 
         <hr className="border-white/5" />
@@ -580,6 +725,105 @@ export default function AdminSettings() {
         </div>
 
       </div>
+
+      {/* Supabase SQL Setup Script Modal */}
+      {showSqlModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setShowSqlModal(false)}
+        >
+          <div 
+            className="bg-zinc-950 border border-white/10 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-zinc-900/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white font-serif tracking-wide uppercase">
+                    Supabase Database Setup Script
+                  </h3>
+                  <p className="text-xs text-zinc-400 font-mono mt-0.5">
+                    Complete SQL schema for Patel Motors Mumbai (Tables, Storage Buckets, RLS & Seed Data)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSqlModal(false)}
+                className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Setup Instructions Bar */}
+            <div className="p-4 bg-zinc-900/30 border-b border-white/5 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
+              <div className="flex items-start gap-2 text-zinc-300">
+                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">1</span>
+                <span>Open <b>Supabase Dashboard</b> &gt; SQL Editor</span>
+              </div>
+              <div className="flex items-start gap-2 text-zinc-300">
+                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">2</span>
+                <span>Click <b>New Query</b> &amp; paste script</span>
+              </div>
+              <div className="flex items-start gap-2 text-zinc-300">
+                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">3</span>
+                <span>Click <b>Run</b> (creates tables &amp; buckets)</span>
+              </div>
+              <div className="flex items-start gap-2 text-zinc-300">
+                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">4</span>
+                <span>Add <b>URL &amp; Anon Key</b> to .env</span>
+              </div>
+            </div>
+
+            {/* Script Viewer Container */}
+            <div className="flex-1 overflow-auto p-4 bg-black/60 font-mono text-[11px] leading-relaxed text-zinc-300 select-all border-b border-white/5">
+              <pre className="whitespace-pre overflow-x-auto text-emerald-400/90 font-mono">
+                {SUPABASE_SETUP_SQL}
+              </pre>
+            </div>
+
+            {/* Modal Footer Controls */}
+            <div className="p-4 bg-zinc-900/60 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Includes vehicles, vehicle_images, leads, sales_invoices, site_settings &amp; storage buckets</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleDownloadSql}
+                  className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/15 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download .sql</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopySql}
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black font-mono font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-lg cursor-pointer"
+                >
+                  {copiedSql ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Copy Full SQL Script</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

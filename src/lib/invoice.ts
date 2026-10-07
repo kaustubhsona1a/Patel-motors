@@ -18,13 +18,13 @@ export interface DealershipInfo {
 export const PATEL_MOTORS_DEALERSHIP: DealershipInfo = {
   name: "Patel Motors",
   tagline: "Buy, Sell & Exchange Premium Pre-Owned Two Wheelers",
-  address: "Showroom No. 4, L.B.S. Marg, Opp. Marathon Heights, Mulund West",
+  address: "Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West",
   city: "Mumbai",
   state: "Maharashtra",
-  pinCode: "400080",
-  phone: "+91 98201 55443 / +91 74001 13999",
+  pinCode: "400028",
+  phone: "+91 84520 88500",
   email: "sales@patelmotors.in",
-  website: "https://patelmotors.in",
+  website: "https://maps.app.goo.gl/5puPNNYsbCpFjaPbA",
   gstin: "27AABCP1234F1Z8",
   pan: "AABCP1234F",
   stateCode: "27 (Maharashtra)"
@@ -426,6 +426,18 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
       letter-spacing: 0.5px;
     }
 
+    @media (max-width: 640px) {
+      body { padding: 6px; font-size: 10px; }
+      .invoice-wrapper { padding: 12px 14px; border-width: 1px; }
+      .top-bar { flex-direction: column; gap: 10px; }
+      .invoice-header-meta { text-align: left; min-width: auto; }
+      .columns-grid { grid-template-columns: 1fr; gap: 8px; }
+      .brand-name { font-size: 20px; }
+      .specs-grid { grid-template-columns: 1fr; }
+      .footer-signatures { flex-direction: row; justify-content: space-between; gap: 8px; }
+      .sig-col { width: 45%; }
+    }
+
     @media print {
       body { background: #ffffff; padding: 0; }
       .invoice-wrapper { border: 1px solid #000; box-shadow: none; padding: 16px; }
@@ -642,7 +654,7 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
         <div style="font-size: 8px; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">Dealership Seal</div>
         <div class="sig-line"></div>
         <div class="sig-title">For PATEL MOTORS</div>
-        <div class="sig-sub">Authorized Signatory (Mulund, Mumbai)</div>
+        <div class="sig-sub">Authorized Signatory (Dadar West, Mumbai)</div>
       </div>
     </div>
   </div>

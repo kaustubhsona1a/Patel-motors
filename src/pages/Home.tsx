@@ -328,7 +328,7 @@ export default function Home() {
             </h2>
             <div className="w-12 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto"></div>
             <p className="text-xs sm:text-base text-zinc-300 font-sans leading-relaxed max-w-2xl mx-auto font-light">
-              Patel Motors is a Mumbai-based premium pre-owned bike dealership focused on quality motorcycles, transparent transactions, and customer satisfaction. Every bike is carefully selected and inspected before being offered for sale.
+              Mumbai's trusted showroom for verified pre-owned motorcycles. Inspected, certified, and ready to ride.
             </p>
             <div className="pt-2 flex justify-center">
               <Link 
@@ -346,10 +346,10 @@ export default function Home() {
         <section className="py-10 sm:py-16 text-center">
           <div className="container mx-auto max-w-3xl px-4 sm:px-6 space-y-4 sm:space-y-6">
             <h2 className="text-xl sm:text-3xl font-cinzel font-bold text-white uppercase tracking-wider">
-              Ready To Ride Your Dream Motorcycle?
+              Ready To Ride?
             </h2>
             <p className="text-xs sm:text-sm text-zinc-300 font-sans max-w-xl mx-auto leading-relaxed">
-              Visit Patel Motors in Mulund, Mumbai, or browse our verified collection online. Book a test ride or get your bike valued today.
+              Visit Patel Motors at Kohinoor Square, Dadar West, or browse our verified collection online.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 pt-1">
               <Link

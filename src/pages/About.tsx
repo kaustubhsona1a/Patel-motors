@@ -52,9 +52,9 @@ export default function About() {
               <span>PREMIUM PRE-OWNED BIKES • MUMBAI</span>
             </div>
 
-            {/* Exact Required Brief Statement */}
+            {/* Clean Brief Statement */}
             <blockquote className="text-zinc-200 text-sm sm:text-base md:text-lg leading-relaxed font-light max-w-2xl mx-auto px-2 border-l-2 border-orange-400/80 pl-4 my-4 italic">
-              "Patel Motors is a Mumbai-based premium pre-owned bike dealership focused on quality motorcycles, transparent transactions, and customer satisfaction. Every bike is carefully selected and inspected before being offered for sale."
+              "Mumbai's trusted showroom for verified pre-owned motorcycles. Inspected, certified, and ready to ride."
             </blockquote>
           </div>
 
@@ -66,47 +66,47 @@ export default function About() {
                 <span className="text-zinc-300 font-semibold">THE PATEL MOTORS PROMISE</span>
               </div>
               <span className="text-zinc-500 hidden sm:inline">•</span>
-              <span className="text-white font-bold">TRANSPARENCY • QUALITY • PASSION</span>
+              <span className="text-white font-bold">TRANSPARENCY • QUALITY • TRUST</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
               <div className="bg-black/40 border border-white/10 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-4 md:p-5 transition-all duration-300">
-                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">01 / Rigorous Vetting</div>
+                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">01 / Inspection</div>
                 <h3 className="text-white font-bold text-xs sm:text-sm tracking-wider uppercase font-sans mb-1.5">
-                  50-Point Technical Check
+                  50-Point Check
                 </h3>
                 <p className="text-zinc-400 text-xs leading-relaxed font-sans font-normal">
-                  Engine compression, electrical harnesses, fork seals, sprocket wear, brake disc thickness, and genuine digital odometer inspection.
+                  Engine compression, electricals, brakes, frame alignment, and genuine odometer verification.
                 </p>
               </div>
 
               <div className="bg-black/40 border border-white/10 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-4 md:p-5 transition-all duration-300">
-                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">02 / Verified Pedigree</div>
+                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">02 / Documentation</div>
                 <h3 className="text-white font-bold text-xs sm:text-sm tracking-wider uppercase font-sans mb-1.5">
-                  Clean Mumbai RTO Title
+                  Clean Mumbai Title
                 </h3>
                 <p className="text-zinc-400 text-xs leading-relaxed font-sans font-normal">
-                  Complete documentation guarantee: verified RC, insurance validity, zero hypothecation hassle, and seamless NOC transfer.
+                  Clear RC, valid insurance, zero hypothecation hassle, and complete RTO transfer support.
                 </p>
               </div>
 
               <div className="bg-black/40 border border-white/10 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-4 md:p-5 transition-all duration-300">
-                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">03 / Fair Exchange</div>
+                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">03 / Trade-In</div>
                 <h3 className="text-white font-bold text-xs sm:text-sm tracking-wider uppercase font-sans mb-1.5">
-                  Best Value Exchange
+                  Bike Exchange
                 </h3>
                 <p className="text-zinc-400 text-xs leading-relaxed font-sans font-normal">
-                  Trade in your current motorcycle against any machine from our inventory with transparent, real-time spot valuation.
+                  Trade in your current motorcycle against any bike from our inventory with spot valuation.
                 </p>
               </div>
 
               <div className="bg-black/40 border border-white/10 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-4 md:p-5 transition-all duration-300">
-                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">04 / Flexible EMIs</div>
+                <div className="text-orange-400 font-mono text-xs font-bold uppercase tracking-widest mb-1">04 / Finance</div>
                 <h3 className="text-white font-bold text-xs sm:text-sm tracking-wider uppercase font-sans mb-1.5">
-                  Tailored Two-Wheeler Loans
+                  Loan Assistance
                 </h3>
                 <p className="text-zinc-400 text-xs leading-relaxed font-sans font-normal">
-                  Tie-ups with leading financial institutions and banks for rapid loan sanctions with up to 80% financing options.
+                  Tie-ups with leading banks for quick loan approvals with low EMIs and flexible tenure.
                 </p>
               </div>
             </div>
@@ -115,10 +115,10 @@ export default function About() {
           {/* 5 Core Dealership Services Banner */}
           <div className="mt-8 frost-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-white/15">
             <h2 className="text-lg sm:text-2xl font-cinzel font-bold text-white uppercase tracking-wider mb-2 text-center">
-              Our Complete Service Suite
+              Our Services
             </h2>
-            <p className="text-xs sm:text-sm text-zinc-400 text-center max-w-xl mx-auto mb-8 font-sans">
-              Comprehensive end-to-end motorcycle solutions for riders across Mumbai and Maharashtra.
+            <p className="text-xs sm:text-sm text-zinc-400 text-center max-w-xl mx-auto mb-6 font-sans">
+              Complete motorcycle buying, selling, exchange, and financing solutions.
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -127,7 +127,7 @@ export default function About() {
                   <Bike className="w-5 h-5" />
                 </div>
                 <div className="text-white text-xs font-bold uppercase tracking-wider">Buy Bikes</div>
-                <div className="text-zinc-400 text-[10px] mt-1">Certified Fleet</div>
+                <div className="text-zinc-400 text-[10px] mt-1">Verified Fleet</div>
               </Link>
 
               <Link to="/sell" className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-center transition-all group">
@@ -143,14 +143,14 @@ export default function About() {
                   <RefreshCw className="w-5 h-5" />
                 </div>
                 <div className="text-white text-xs font-bold uppercase tracking-wider">Exchange Bikes</div>
-                <div className="text-zinc-400 text-[10px] mt-1">Upgrade Seamlessly</div>
+                <div className="text-zinc-400 text-[10px] mt-1">Easy Upgrades</div>
               </Link>
 
               <div className="p-4 bg-white/5 border border-white/10 rounded-xl text-center">
                 <div className="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center mx-auto mb-2">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
-                <div className="text-white text-xs font-bold uppercase tracking-wider">Bike Inspection</div>
+                <div className="text-white text-xs font-bold uppercase tracking-wider">Inspection</div>
                 <div className="text-zinc-400 text-[10px] mt-1">50-Point Technical</div>
               </div>
 
@@ -158,8 +158,8 @@ export default function About() {
                 <div className="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center mx-auto mb-2">
                   <Award className="w-5 h-5" />
                 </div>
-                <div className="text-white text-xs font-bold uppercase tracking-wider">Finance Help</div>
-                <div className="text-zinc-400 text-[10px] mt-1">Instant Bank Approvals</div>
+                <div className="text-white text-xs font-bold uppercase tracking-wider">Finance</div>
+                <div className="text-zinc-400 text-[10px] mt-1">Low Interest EMIs</div>
               </div>
             </div>
           </div>
@@ -170,23 +170,28 @@ export default function About() {
               <span className="text-orange-400 font-mono text-[10px] font-bold uppercase tracking-widest block">VISIT OUR SHOWROOM</span>
               <h3 className="text-xl sm:text-2xl font-cinzel font-bold text-white uppercase">Patel Motors Mumbai</h3>
               <p className="text-zinc-300 text-xs sm:text-sm font-sans max-w-md">
-                Opposite Bandra Talao, SV Road, Bandra West, Mumbai, Maharashtra 400050.
+                Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai, Maharashtra 400028.
+              </p>
+              <p className="text-zinc-400 text-xs font-sans">
                 Open Monday to Saturday, 10:00 AM – 8:00 PM.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <a 
-                href="tel:+917400113999" 
-                className="px-6 py-3 bg-white text-black hover:bg-zinc-100 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-center"
+                href="https://maps.app.goo.gl/5puPNNYsbCpFjaPbA" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="px-6 py-3 bg-white text-black hover:bg-zinc-100 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Call: +91 74001 13999
+                <MapPin className="w-3.5 h-3.5 text-orange-600" />
+                <span>Google Maps Location</span>
               </a>
-              <Link 
-                to="/inventory" 
-                className="px-6 py-3 frost-pill text-white hover:text-black rounded-full text-xs font-bold uppercase tracking-wider transition-all text-center"
+              <a 
+                href="tel:+918452088500" 
+                className="px-6 py-3 frost-pill text-white hover:text-orange-400 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-center"
               >
-                Browse Inventory
-              </Link>
+                Call: +91 84520 88500
+              </a>
             </div>
           </div>
 

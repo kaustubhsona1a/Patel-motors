@@ -652,7 +652,7 @@ export default function AdminAddVehicle() {
               </label>
               <input 
                 type="text" 
-                placeholder="e.g. Mumbai (Mulund Showroom)"
+                placeholder="e.g. Mumbai (Dadar Showroom)"
                 value={formData.location}
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
                 className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all"

@@ -174,22 +174,22 @@ export default function CustomerLayout() {
 
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3.5 flex justify-between items-center gap-3 sm:gap-4 h-[58px] sm:h-auto overflow-hidden">
             
-            {/* Zone 1: Branding Logo (Typographic mark with refined spacing, bike logo removed) */}
+            {/* Zone 1: Branding Logo (Stylish font Cinzel like earlier) */}
             <Link to="/" className="flex flex-col justify-center shrink-0 select-none group py-0.5">
-              <div className="flex flex-col sm:flex-row sm:items-baseline tracking-[0.16em] leading-tight">
-                <span className="font-sans text-[13.5px] sm:text-lg font-extrabold text-white uppercase group-hover:text-orange-400 transition-colors tracking-[0.2em]">
+              <div className="flex flex-row items-baseline tracking-[0.18em] leading-tight">
+                <span className="font-cinzel text-base sm:text-xl font-bold text-white uppercase group-hover:text-orange-400 transition-colors tracking-[0.2em]">
                   PATEL
                 </span>
-                <span className="font-sans text-[11px] sm:text-base font-bold text-zinc-300 uppercase sm:ml-1.5 group-hover:text-white transition-colors tracking-[0.22em] mt-0.5 sm:mt-0">
+                <span className="font-cinzel text-sm sm:text-lg font-medium text-zinc-300 uppercase ml-1.5 group-hover:text-white transition-colors tracking-[0.22em]">
                   MOTORS
                 </span>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 mt-1 whitespace-nowrap">
-                <span className="text-[8.5px] sm:text-[9px] font-sans tracking-[0.24em] text-orange-400 uppercase font-semibold">
+              <div className="hidden sm:flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
+                <span className="text-[7.5px] sm:text-[9px] font-sans tracking-[0.24em] text-orange-400 uppercase font-semibold">
                   MUMBAI
                 </span>
                 <span className="text-zinc-600 text-[8px]">•</span>
-                <span className="text-[8px] sm:text-[8.5px] font-sans tracking-[0.16em] text-zinc-400 uppercase font-medium">
+                <span className="text-[7.5px] sm:text-[8.5px] font-sans tracking-[0.16em] text-zinc-400 uppercase font-medium">
                   PRE-OWNED BIKES
                 </span>
               </div>
@@ -261,15 +261,15 @@ export default function CustomerLayout() {
             <div className="hidden lg:flex items-center space-x-3 shrink-0">
               {/* Desktop Phone Number Pill: Clean single-line layout that never wraps */}
               <a 
-                href="tel:+917400113999" 
+                href="tel:+918452088500" 
                 className="flex items-center gap-2 px-3.5 py-1.5 rounded-full frost-pill hover:border-white/40 text-xs font-sans whitespace-nowrap group transition-all shrink-0"
-                title="Call Patel Motors: +91 74001 13999"
+                title="Call Patel Motors: +91 84520 88500"
               >
                 <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-orange-400 group-hover:text-white transition-colors">
                   <Phone className="w-3 h-3 stroke-[2]" />
                 </div>
                 <span className="text-zinc-200 group-hover:text-white font-medium tracking-wide text-[12px] font-sans whitespace-nowrap">
-                  +91 74001 13999
+                  +91 84520 88500
                 </span>
               </a>
 
@@ -279,7 +279,7 @@ export default function CustomerLayout() {
               {/* Frosted Social & Location Icons */}
               <div className="flex items-center space-x-2 shrink-0">
                 <a 
-                  href="https://wa.me/917400113999" 
+                  href="https://wa.me/918452088500" 
                   target="_blank" 
                   rel="noreferrer" 
                   className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-white hover:border-[#25D366]/60 transition-all shrink-0"
@@ -297,36 +297,28 @@ export default function CustomerLayout() {
                   <Instagram className="w-3.5 h-3.5 stroke-[1.8]" />
                 </a>
                 <a 
-                  href="https://maps.google.com/?q=Patel+Motors+Mulund+West+Mumbai" 
+                  href="https://maps.app.goo.gl/5puPNNYsbCpFjaPbA" 
                   target="_blank" 
                   rel="noreferrer" 
                   className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#EA4335] hover:text-red-400 hover:border-[#EA4335]/60 transition-all shrink-0"
-                  title="Google Location & Showroom"
+                  title="Google Location & Showroom (Kohinoor Square, Dadar West)"
                 >
                   <MapPin className="w-3.5 h-3.5 stroke-[1.8]" />
                 </a>
               </div>
-
-              {/* Dealer Portal Badge */}
-              <Link
-                to="/dealer-management"
-                className="ml-1 px-3 py-1.5 rounded-full border border-white/20 hover:border-white text-zinc-300 hover:text-white text-[10.5px] font-mono tracking-wider uppercase transition-all bg-white/[0.04] hover:bg-white/10 whitespace-nowrap shrink-0"
-              >
-                Dealer Portal ↗
-              </Link>
             </div>
 
             {/* Mobile / Compact Quick Actions (< lg) - Spread out with comfortable breathing room */}
             <div className="flex lg:hidden items-center space-x-2.5 sm:space-x-3.5 shrink-0">
               <a 
-                href="tel:+917400113999" 
+                href="tel:+918452088500" 
                 className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
                 title="Call Showroom"
               >
                 <Phone className="w-3.5 h-3.5 stroke-[1.8] text-orange-400" />
               </a>
               <a 
-                href="https://wa.me/917400113999" 
+                href="https://wa.me/918452088500" 
                 target="_blank" 
                 rel="noreferrer" 
                 className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
@@ -417,15 +409,6 @@ export default function CustomerLayout() {
                 <span>Contact</span>
               </a>
 
-              <Link 
-                to="/dealer-management" 
-                onClick={closeMenu} 
-                className="px-4 py-3 rounded-xl transition-all duration-200 text-xs font-mono tracking-wider uppercase text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-between border border-white/5"
-              >
-                <span>Dealer Portal</span>
-                <span className="text-[10px] text-zinc-500">↗</span>
-              </Link>
-
               {/* Mobile Menu Footer Details */}
               <div className="pt-3 mt-2 border-t border-white/10 flex items-center justify-between text-[10px] font-sans text-zinc-400 px-2">
                 <a 
@@ -437,8 +420,8 @@ export default function CustomerLayout() {
                   <Instagram className="w-3.5 h-3.5 text-[#E4405F]" />
                   <span>@patelmotorsmumbai</span>
                 </a>
-                <a href="tel:+917400113999" className="text-zinc-300 hover:text-white">
-                  +91 74001 13999
+                <a href="tel:+918452088500" className="text-zinc-300 hover:text-white">
+                  +91 84520 88500
                 </a>
               </div>
             </div>
@@ -477,7 +460,7 @@ export default function CustomerLayout() {
               </div>
             </div>
             <p className="text-xs tracking-wide leading-relaxed text-zinc-300 font-normal font-sans">
-              Patel Motors is a Mumbai-based premium pre-owned bike dealership focused on quality motorcycles, transparent transactions, and customer satisfaction. Every bike is carefully selected and inspected before being offered for sale.
+              Mumbai's trusted showroom for verified pre-owned motorcycles. Inspected, certified, and ready to ride.
             </p>
             <div className="flex items-center space-x-3 pt-1">
               <a 
@@ -489,10 +472,10 @@ export default function CustomerLayout() {
               >
                 <Instagram className="w-4 h-4" />
               </a>
-              <a href="https://wa.me/917400113999" target="_blank" rel="noreferrer" className="p-2.5 rounded-full frost-pill hover:bg-[#25D366] hover:text-white transition-all text-[#25D366]" title="WhatsApp">
+              <a href="https://wa.me/918452088500" target="_blank" rel="noreferrer" className="p-2.5 rounded-full frost-pill hover:bg-[#25D366] hover:text-white transition-all text-[#25D366]" title="WhatsApp">
                 <MessageCircle className="w-4 h-4" />
               </a>
-              <a href="tel:+919820155443" className="p-2.5 rounded-full frost-pill hover:bg-white hover:text-black transition-all text-white" title="Call Showroom">
+              <a href="tel:+918452088500" className="p-2.5 rounded-full frost-pill hover:bg-white hover:text-black transition-all text-white" title="Call Showroom">
                 <Phone className="w-4 h-4" />
               </a>
             </div>
@@ -504,7 +487,7 @@ export default function CustomerLayout() {
               <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></span> Buy Bikes</li>
               <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></span> Sell Bikes</li>
               <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></span> Exchange Bikes</li>
-              <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></span> 50-Point Bike Inspection</li>
+              <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></span> 50-Point Inspection</li>
               <li className="flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></span> Finance Assistance</li>
             </ul>
           </div>
@@ -515,7 +498,6 @@ export default function CustomerLayout() {
               <li><Link to="/inventory" className="hover:text-white transition-colors duration-300">Browse Bikes</Link></li>
               <li><Link to="/sell" className="hover:text-white transition-colors duration-300">Sell Your Bike</Link></li>
               <li><Link to="/about" className="hover:text-white transition-colors duration-300">About Patel Motors</Link></li>
-              <li><Link to="/dealer-management" className="text-orange-400 hover:text-orange-300 font-mono transition-colors duration-300">Dealer Portal ↗</Link></li>
             </ul>
           </div>
 
@@ -524,13 +506,18 @@ export default function CustomerLayout() {
             <ul className="space-y-3.5 text-xs text-zinc-200 font-sans">
               <li className="flex items-start">
                 <MapPin className="w-4 h-4 text-orange-400 mr-2.5 shrink-0 mt-0.5" />
-                <span className="leading-relaxed font-normal text-zinc-300">
-                  Showroom No. 4, L.B.S. Marg, Opp. Marathon Heights, Mulund West, Mumbai, Maharashtra 400080
-                </span>
+                <a 
+                  href="https://maps.app.goo.gl/5puPNNYsbCpFjaPbA" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="leading-relaxed font-normal text-zinc-300 hover:text-white transition-colors"
+                >
+                  Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai, Maharashtra 400028
+                </a>
               </li>
               <li className="flex items-center">
                 <Phone className="w-4 h-4 text-orange-400 mr-2.5 shrink-0" />
-                <a href="tel:+919820155443" className="hover:text-white font-mono font-bold text-white">+91 98201 55443 / +91 74001 13999</a>
+                <a href="tel:+918452088500" className="hover:text-white font-mono font-bold text-white">+91 84520 88500</a>
               </li>
               <li className="flex items-center">
                 <Instagram className="w-4 h-4 text-orange-400 mr-2.5 shrink-0" />
@@ -561,8 +548,9 @@ export default function CustomerLayout() {
             &copy; {new Date().getFullYear()} Patel Motors. Mumbai's Premium Pre-Owned Motorcycle Dealership.
           </button>
           <div className="flex items-center space-x-6 mt-4 md:mt-0 text-zinc-400 font-mono text-[10px]">
-            <Link to="/dealer-management" className="text-zinc-400 hover:text-white transition-colors">Dealer Portal</Link>
-            <a href="#contact" className="hover:text-white">Mumbai, MH</a>
+            <a href="https://maps.app.goo.gl/5puPNNYsbCpFjaPbA" target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-white transition-colors">
+              Dadar West, Mumbai ↗
+            </a>
           </div>
         </div>
       </footer>
