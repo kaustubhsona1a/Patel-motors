@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useVehicles, sanitizeHeroImage, sanitizeHeroMobileImage, PATEL_HERO_DESKTOP, PATEL_HERO_MOBILE } from '../../context/VehicleContext';
-import { UploadCloud, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, AlertCircle, Wifi, WifiOff, Check, RefreshCw, CheckCircle2, X, Cloud, Database, Code, Copy, ExternalLink, Download } from 'lucide-react';
+import { UploadCloud, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, AlertCircle, RefreshCw, CheckCircle2, Cloud, Database } from 'lucide-react';
 import { uploadImageToStorage, cleanupLegacyImageVariants, supabase } from '../../lib/supabase';
 import { SmartImage } from '../../components/SmartImage';
-import { SUPABASE_SETUP_SQL } from '../../data/supabaseSql';
+
 export default function AdminSettings() {
   const { siteConfig, updateSiteConfig, refreshInventory } = useVehicles();
   const [success, setSuccess] = useState('');
@@ -14,13 +13,11 @@ export default function AdminSettings() {
 
   const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'not_configured' | 'error'>('checking');
   const [supabaseErrorMsg, setSupabaseErrorMsg] = useState('');
-  const [showSqlModal, setShowSqlModal] = useState(false);
-  const [copiedSql, setCopiedSql] = useState(false);
 
   const checkConnection = async () => {
     setSupabaseStatus('checking');
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON;
+    const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON;
     
     if (!url || !key || url === 'YOUR_SUPABASE_URL' || url === 'https://placeholder.supabase.co' || url.includes('placeholder')) {
       setSupabaseStatus('not_configured');
@@ -45,28 +42,6 @@ export default function AdminSettings() {
   React.useEffect(() => {
     checkConnection();
   }, []);
-
-  const handleCopySql = async () => {
-    try {
-      await navigator.clipboard.writeText(SUPABASE_SETUP_SQL);
-      setCopiedSql(true);
-      setTimeout(() => setCopiedSql(false), 3000);
-    } catch (err) {
-      console.error('Failed to copy SQL:', err);
-    }
-  };
-
-  const handleDownloadSql = () => {
-    const blob = new Blob([SUPABASE_SETUP_SQL], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'patel_motors_supabase_setup.sql';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
   
   const handleCleanupLegacyVariants = async () => {
     setIsCleaning(true);
@@ -307,34 +282,29 @@ export default function AdminSettings() {
             <button
               type="button"
               onClick={checkConnection}
-              className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/15 rounded-xl text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Test Connection</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowSqlModal(true)}
-              className="px-4 py-2 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
-            >
-              <Code className="w-3.5 h-3.5" />
-              <span>Supabase SQL Script</span>
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
-            <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">Database Tables</div>
-            <div className="text-white font-mono text-[11px]">vehicles, vehicle_images, leads, site_settings, metadata_versions</div>
+            <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">Database Engine</div>
+            <div className="text-white font-mono text-[11px]">PostgreSQL (Supabase Cloud)</div>
           </div>
           <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
             <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">Storage Buckets</div>
-            <div className="text-white font-mono text-[11px]">vehicle-images, site_settings (Public)</div>
+            <div className="text-white font-mono text-[11px]">vehicle-images, site_settings</div>
           </div>
           <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
-            <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">SQL Setup File</div>
-            <div className="text-white font-mono text-[11px]">supabase/schema.sql (1-click ready)</div>
+            <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400">Cloud Sync</div>
+            <div className="text-emerald-400 font-mono text-[11px] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Live Synced
+            </div>
           </div>
         </div>
       </div>
@@ -727,103 +697,6 @@ export default function AdminSettings() {
       </div>
 
       {/* Supabase SQL Setup Script Modal */}
-      {showSqlModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setShowSqlModal(false)}
-        >
-          <div 
-            className="bg-zinc-950 border border-white/10 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-zinc-900/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-                  <Database className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white font-serif tracking-wide uppercase">
-                    Supabase Database Setup Script
-                  </h3>
-                  <p className="text-xs text-zinc-400 font-mono mt-0.5">
-                    Complete SQL schema for Patel Motors Mumbai (Tables, Storage Buckets, RLS & Seed Data)
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSqlModal(false)}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Quick Setup Instructions Bar */}
-            <div className="p-4 bg-zinc-900/30 border-b border-white/5 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
-              <div className="flex items-start gap-2 text-zinc-300">
-                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">1</span>
-                <span>Open <b>Supabase Dashboard</b> &gt; SQL Editor</span>
-              </div>
-              <div className="flex items-start gap-2 text-zinc-300">
-                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">2</span>
-                <span>Click <b>New Query</b> &amp; paste script</span>
-              </div>
-              <div className="flex items-start gap-2 text-zinc-300">
-                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">3</span>
-                <span>Click <b>Run</b> (creates tables &amp; buckets)</span>
-              </div>
-              <div className="flex items-start gap-2 text-zinc-300">
-                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-white shrink-0 font-bold">4</span>
-                <span>Add <b>URL &amp; Anon Key</b> to .env</span>
-              </div>
-            </div>
-
-            {/* Script Viewer Container */}
-            <div className="flex-1 overflow-auto p-4 bg-black/60 font-mono text-[11px] leading-relaxed text-zinc-300 select-all border-b border-white/5">
-              <pre className="whitespace-pre overflow-x-auto text-emerald-400/90 font-mono">
-                {SUPABASE_SETUP_SQL}
-              </pre>
-            </div>
-
-            {/* Modal Footer Controls */}
-            <div className="p-4 bg-zinc-900/60 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Includes vehicles, vehicle_images, leads, sales_invoices, site_settings &amp; storage buckets</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleDownloadSql}
-                  className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/15 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download .sql</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCopySql}
-                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black font-mono font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-lg cursor-pointer"
-                >
-                  {copiedSql ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Copied to Clipboard!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>Copy Full SQL Script</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

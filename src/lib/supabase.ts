@@ -3,12 +3,20 @@ import imageCompression from 'browser-image-compression';
 import { isHeicBlob, convertHeicToJpeg } from './heic';
 import { isBombayMotorsUrl } from './imageCache';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON || 'placeholder';
+const supabaseUrl = 
+  import.meta.env.VITE_SUPABASE_URL || 
+  import.meta.env.SUPABASE_URL || 
+  'https://placeholder.supabase.co';
+
+const supabaseAnonKey = 
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 
+  import.meta.env.SUPABASE_ANON_KEY || 
+  import.meta.env.VITE_SUPABASE_ANON || 
+  'placeholder';
 
 export const isSupabaseConfigured = (): boolean => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON;
+  const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON;
   return Boolean(
     url &&
     url !== 'YOUR_SUPABASE_URL' &&

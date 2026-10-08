@@ -117,8 +117,8 @@ export function sanitizeAboutImage(path: string | undefined): string {
 }
 
 const isSupabaseConfigured = () => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON;
+  const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON;
   const isConfigured = Boolean(
     url &&
     url !== 'YOUR_SUPABASE_URL' &&
