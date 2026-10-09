@@ -12,7 +12,6 @@ export default function AdminSettings() {
   const [isCleaning, setIsCleaning] = useState(false);
 
   const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'not_configured' | 'error'>('checking');
-  const [supabaseErrorMsg, setSupabaseErrorMsg] = useState('');
 
   const checkConnection = async () => {
     setSupabaseStatus('checking');
@@ -28,14 +27,11 @@ export default function AdminSettings() {
       const { error } = await supabase.from('metadata_versions').select('key').limit(1);
       if (error) {
         setSupabaseStatus('error');
-        setSupabaseErrorMsg(error.message || JSON.stringify(error));
       } else {
         setSupabaseStatus('connected');
-        setSupabaseErrorMsg('');
       }
-    } catch (err: any) {
+    } catch {
       setSupabaseStatus('error');
-      setSupabaseErrorMsg(err?.message || String(err));
     }
   };
 
@@ -270,10 +266,10 @@ export default function AdminSettings() {
               </div>
               <p className="text-xs text-zinc-400 mt-1 font-sans">
                 {supabaseStatus === 'connected' 
-                  ? 'Connected to live Supabase project. Motorcycles, leads, settings & photos are synced.' 
+                  ? 'Connected to cloud storage. Inventory and media are synced in real-time.' 
                   : supabaseStatus === 'not_configured'
-                  ? 'Running on high-speed browser cache. Configure VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY to sync cloud.'
-                  : `Connection issue: ${supabaseErrorMsg}`}
+                  ? 'Cloud integration is not active. Running in offline cache mode.'
+                  : 'Cloud connection could not be established.'}
               </p>
             </div>
           </div>

@@ -64,6 +64,7 @@ export default function App() {
                   <Route path="inventory/:id" element={<VehicleDetails />} />
                   <Route path="sell" element={<SellCar />} />
                   <Route path="about" element={<About />} />
+                  <Route path="*" element={<Home />} />
                 </Route>
 
                 <Route path="/dealer-management" element={<AdminLayout />}>
