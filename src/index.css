@@ -14,21 +14,40 @@
   html, body {
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+  }
+  #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   body {
     @apply bg-[#050505] text-zinc-300 font-sans antialiased selection:bg-white selection:text-black;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-cinzel text-white tracking-wider;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+  p, span, a, li {
+    overflow-wrap: break-word;
   }
   html {
     @apply font-sans bg-[#050505];
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  input, select, textarea, button {
+    touch-action: manipulation;
   }
   input, select, textarea {
     font-size: 16px;
-    touch-action: manipulation;
   }
 }
 

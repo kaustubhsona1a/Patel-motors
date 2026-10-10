@@ -300,14 +300,14 @@ export default function AdminLayout() {
         </header>
 
         {/* Scrollable Content with responsive padding */}
-        <div className="flex-1 overflow-auto p-3.5 sm:p-6 lg:p-8 pb-20 lg:pb-8 bg-zinc-950/10 backdrop-blur-[1px]">
+        <div className="flex-1 overflow-auto p-3.5 sm:p-6 lg:p-8 pb-24 lg:pb-8 bg-zinc-950/10 backdrop-blur-[1px]">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>
         </div>
 
         {/* Mobile Dealer Bottom Navigation Bar - 1-Tap navigation on phones */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] flex items-center justify-around shadow-2xl">
           <Link
             to="/dealer-management"
             className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${

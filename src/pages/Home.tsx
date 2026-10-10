@@ -38,7 +38,7 @@ export default function Home() {
       </Helmet>
 
       {/* Clean Hero Section - Open Canvas For Custom Background Banner */}
-      <section className="relative min-h-[calc(100vh-58px)] sm:min-h-[80vh] md:min-h-[85vh] flex flex-col justify-center sm:justify-end items-center pt-28 sm:pt-0 pb-10 sm:pb-16 px-4 sm:px-6 md:px-12 text-center z-20">
+      <section className="relative min-h-[calc(100dvh-58px)] sm:min-h-[75vh] md:min-h-[80vh] flex flex-col justify-center sm:justify-end items-center pt-24 sm:pt-0 pb-10 sm:pb-16 px-4 sm:px-6 md:px-12 text-center z-20">
         <h1 className="sr-only">Patel Motors - Premium Pre-Owned Bikes Mumbai</h1>
 
         {/* Direct Action Buttons: on mobile stacked one below the other, small and compact, in little below centre position */}
@@ -182,7 +182,7 @@ export default function Home() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 lg:gap-5">
               {/* 1. Buy Bikes */}
               <div className="frost-card p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-white/10 hover:border-orange-500/40 transition-all flex flex-col justify-between group">
                 <div>
@@ -260,7 +260,7 @@ export default function Home() {
               </div>
 
               {/* 5. Finance Assistance */}
-              <div className="frost-card p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-white/10 hover:border-orange-500/40 transition-all flex flex-col justify-between group col-span-2 sm:col-span-1">
+              <div className="frost-card p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-white/10 hover:border-orange-500/40 transition-all flex flex-col justify-between group col-span-2 md:col-span-2 lg:col-span-1">
                 <div>
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mb-2.5 sm:mb-3 group-hover:scale-105 transition-transform">
                     <Banknote className="w-4 h-4 sm:w-5 sm:h-5" />

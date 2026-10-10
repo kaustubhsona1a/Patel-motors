@@ -172,15 +172,15 @@ export default function CustomerLayout() {
             : 'frost-nav'
         } text-zinc-100`}>
 
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3.5 flex justify-between items-center gap-3 sm:gap-4 h-[58px] sm:h-auto overflow-hidden">
+          <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 py-2 sm:py-3 flex justify-between items-center gap-2 sm:gap-4 min-h-[56px] sm:min-h-[62px]">
             
-            {/* Zone 1: Branding Logo (Stylish font Cinzel like earlier) */}
+            {/* Zone 1: Branding Logo */}
             <Link to="/" className="flex flex-col justify-center shrink-0 select-none group py-0.5">
-              <div className="flex flex-row items-baseline tracking-[0.18em] leading-tight">
-                <span className="font-cinzel text-base sm:text-xl font-bold text-white uppercase group-hover:text-orange-400 transition-colors tracking-[0.2em]">
+              <div className="flex flex-row items-baseline tracking-[0.14em] sm:tracking-[0.18em] leading-tight">
+                <span className="font-cinzel text-sm sm:text-lg lg:text-xl font-bold text-white uppercase group-hover:text-orange-400 transition-colors tracking-[0.16em] sm:tracking-[0.2em]">
                   PATEL
                 </span>
-                <span className="font-cinzel text-sm sm:text-lg font-medium text-zinc-300 uppercase ml-1.5 group-hover:text-white transition-colors tracking-[0.22em]">
+                <span className="font-cinzel text-xs sm:text-base lg:text-lg font-medium text-zinc-300 uppercase ml-1 sm:ml-1.5 group-hover:text-white transition-colors tracking-[0.18em] sm:tracking-[0.22em]">
                   MOTORS
                 </span>
               </div>
@@ -195,11 +195,11 @@ export default function CustomerLayout() {
               </div>
             </Link>
 
-            {/* Zone 2: Desktop Navigation Links (Centered, roomy, non-wrapping) */}
-            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 text-[12px] xl:text-[12.5px] tracking-[0.14em] uppercase font-sans font-semibold whitespace-nowrap">
+            {/* Zone 2: Desktop Navigation Links (Responsive spacing for iPad Landscape & Desktop) */}
+            <nav className="hidden lg:flex items-center space-x-3.5 xl:space-x-8 text-[11px] xl:text-[12.5px] tracking-[0.08em] xl:tracking-[0.14em] uppercase font-sans font-semibold whitespace-nowrap min-w-0">
               <Link 
                 to="/" 
-                className={`relative py-1.5 transition-all duration-300 ${
+                className={`relative py-1 transition-all duration-300 ${
                   location.pathname === '/' 
                     ? 'text-white font-bold' 
                     : 'text-zinc-400 hover:text-white'
@@ -212,7 +212,7 @@ export default function CustomerLayout() {
               </Link>
               <Link 
                 to="/inventory" 
-                className={`relative py-1.5 transition-all duration-300 ${
+                className={`relative py-1 transition-all duration-300 ${
                   location.pathname.startsWith('/inventory') 
                     ? 'text-white font-bold' 
                     : 'text-zinc-400 hover:text-white'
@@ -225,7 +225,7 @@ export default function CustomerLayout() {
               </Link>
               <Link 
                 to="/sell" 
-                className={`relative py-1.5 transition-all duration-300 ${
+                className={`relative py-1 transition-all duration-300 ${
                   location.pathname === '/sell' 
                     ? 'text-white font-bold' 
                     : 'text-zinc-400 hover:text-white'
@@ -238,7 +238,7 @@ export default function CustomerLayout() {
               </Link>
               <Link 
                 to="/about" 
-                className={`relative py-1.5 transition-all duration-300 ${
+                className={`relative py-1 transition-all duration-300 ${
                   location.pathname === '/about' 
                     ? 'text-white font-bold' 
                     : 'text-zinc-400 hover:text-white'
@@ -251,18 +251,18 @@ export default function CustomerLayout() {
               </Link>
               <a 
                 href="#contact" 
-                className="relative py-1.5 text-zinc-400 hover:text-white transition-all duration-300"
+                className="relative py-1 text-zinc-400 hover:text-white transition-all duration-300"
               >
                 CONTACT
               </a>
             </nav>
 
             {/* Zone 3: Right Quick Action Cluster */}
-            <div className="hidden lg:flex items-center space-x-3 shrink-0">
-              {/* Desktop Phone Number Pill: Clean single-line layout that never wraps */}
+            <div className="hidden lg:flex items-center space-x-2.5 xl:space-x-3 shrink-0">
+              {/* Full phone pill on xl screens, icon on lg screens to avoid iPad overflow */}
               <a 
                 href="tel:+918452088500" 
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full frost-pill hover:border-white/40 text-xs font-sans whitespace-nowrap group transition-all shrink-0"
+                className="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-full frost-pill hover:border-white/40 text-xs font-sans whitespace-nowrap group transition-all shrink-0"
                 title="Call Patel Motors: +91 84520 88500"
               >
                 <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-orange-400 group-hover:text-white transition-colors">
@@ -273,11 +273,20 @@ export default function CustomerLayout() {
                 </span>
               </a>
 
-              {/* Vertical Subtle Divider */}
-              <div className="h-4 w-[1px] bg-white/20 shrink-0"></div>
+              {/* Compact phone button for lg/iPad screens */}
+              <a 
+                href="tel:+918452088500" 
+                className="flex xl:hidden w-8 h-8 rounded-full frost-pill items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
+                title="Call Patel Motors: +91 84520 88500"
+              >
+                <Phone className="w-3.5 h-3.5 stroke-[1.8] text-orange-400" />
+              </a>
+
+              {/* Vertical Subtle Divider on xl */}
+              <div className="hidden xl:block h-4 w-[1px] bg-white/20 shrink-0"></div>
 
               {/* Frosted Social & Location Icons */}
-              <div className="flex items-center space-x-2 shrink-0">
+              <div className="flex items-center space-x-1.5 xl:space-x-2 shrink-0">
                 <a 
                   href="https://wa.me/918452088500" 
                   target="_blank" 
@@ -308,8 +317,8 @@ export default function CustomerLayout() {
               </div>
             </div>
 
-            {/* Mobile / Compact Quick Actions (< lg) - Spread out with comfortable breathing room */}
-            <div className="flex lg:hidden items-center space-x-2.5 sm:space-x-3.5 shrink-0">
+            {/* Mobile / Tablet Quick Actions (< lg) */}
+            <div className="flex lg:hidden items-center space-x-2 sm:space-x-3 shrink-0">
               <a 
                 href="tel:+918452088500" 
                 className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
@@ -336,7 +345,7 @@ export default function CustomerLayout() {
                 <Instagram className="w-3.5 h-3.5 stroke-[1.8]" />
               </a>
               <button 
-                className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0" 
+                className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer" 
                 onClick={() => setIsMenuOpen(!isMenuOpen)} 
                 aria-label="Toggle menu"
               >
@@ -438,8 +447,8 @@ export default function CustomerLayout() {
         {/* Ambient pulse */}
         <div className="absolute bottom-0 right-0 w-[450px] h-[450px] bg-white/[0.015] rounded-full blur-[160px] pointer-events-none"></div>
 
-        <div className="container mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10 text-zinc-300">
-          <div className="space-y-4 md:col-span-1">
+        <div className="container mx-auto max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 relative z-10 text-zinc-300">
+          <div className="space-y-4">
             <div>
               <div className="flex items-baseline tracking-[0.16em] leading-none">
                 <span className="font-cinzel text-lg font-bold text-white uppercase">

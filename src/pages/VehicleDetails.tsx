@@ -273,83 +273,85 @@ export default function VehicleDetails() {
   const renderTechnicalDetails = (isMobile: boolean) => {
     if (!car) return null;
     return (
-      <div className={`frost-card rounded-2xl shadow-xl animate-fade-in font-sans ${isMobile ? 'p-4 space-y-4' : 'p-8 md:p-10 space-y-8'}`}>
+      <div className={`frost-card rounded-2xl shadow-xl animate-fade-in font-sans ${isMobile ? 'p-3.5 sm:p-5 space-y-4' : 'p-5 lg:p-7 xl:p-8 space-y-6'}`}>
         <div>
-          <h2 className={`font-cinzel font-bold text-white border-b border-white/15 uppercase tracking-wider ${isMobile ? 'text-lg mb-4 pb-3' : 'text-2xl mb-8 pb-5'}`}>Technical Specifications</h2>
-          <div className={`grid grid-cols-2 ${isMobile ? 'gap-2' : 'md:grid-cols-4 gap-4'} text-zinc-200`}>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Make</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-cinzel">{car.make}</p>
+          <h2 className={`font-cinzel font-bold text-white border-b border-white/15 uppercase tracking-wider ${isMobile ? 'text-base sm:text-lg mb-3.5 pb-2.5' : 'text-xl sm:text-2xl mb-6 pb-4'}`}>
+            Technical Specifications
+          </h2>
+          <div className={`grid grid-cols-2 ${isMobile ? 'gap-2 sm:gap-2.5' : 'sm:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3.5'} text-zinc-200`}>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Make</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-cinzel truncate">{car.make}</p>
             </div>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Model</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.model}</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Model</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.model}</p>
             </div>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Year</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.year}</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Year</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.year}</p>
             </div>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Mileage</p>
-              <p className="text-white font-black text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.mileage.toLocaleString()} KM</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Mileage</p>
+              <p className="text-white font-extrabold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.mileage.toLocaleString()} KM</p>
             </div>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Fuel Type</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.fuelType}</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Fuel Type</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.fuelType}</p>
             </div>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Engine Capacity</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.engineCC ? `${car.engineCC} cc` : (car.engine || 'N/A')}</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Engine Capacity</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.engineCC ? `${car.engineCC} cc` : (car.engine || 'N/A')}</p>
             </div>
             {car.bodyType && (
-              <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-                <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Category</p>
-                <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.bodyType}</p>
+              <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+                <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Category</p>
+                <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.bodyType}</p>
               </div>
             )}
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Transmission</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.transmission}</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Transmission</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.transmission}</p>
             </div>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Ownership</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.ownership}</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Ownership</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.ownership}</p>
             </div>
-            <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-              <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Color</p>
-              <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.color}</p>
+            <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+              <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Color</p>
+              <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.color}</p>
             </div>
             {car.insuranceStatus && (
-              <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-                <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Insurance</p>
-                <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.insuranceStatus}</p>
+              <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+                <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Insurance</p>
+                <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.insuranceStatus}</p>
               </div>
             )}
             {car.rcStatus && (
-              <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-                <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>RC Status</p>
-                <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.rcStatus}</p>
+              <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+                <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">RC Status</p>
+                <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.rcStatus}</p>
               </div>
             )}
             {car.condition && (
-              <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-                <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Condition</p>
-                <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.condition}</p>
+              <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+                <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Condition</p>
+                <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.condition}</p>
               </div>
             )}
             {car.serviceHistory && (
-              <div className={`frost-card rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-                <p className={`${isMobile ? 'text-[9px]' : 'text-[11px]'} tracking-wider uppercase text-zinc-300 mb-1 font-semibold font-sans`}>Service History</p>
-                <p className="text-white font-bold text-xs sm:text-sm md:text-base tracking-wide uppercase font-sans">{car.serviceHistory}</p>
+              <div className="frost-card rounded-xl p-2.5 sm:p-3.5 min-w-0 overflow-hidden">
+                <p className="text-[9px] sm:text-[10px] tracking-wider uppercase text-zinc-400 mb-0.5 font-semibold font-sans truncate">Service History</p>
+                <p className="text-white font-bold text-xs sm:text-sm tracking-wide uppercase font-sans truncate">{car.serviceHistory}</p>
               </div>
             )}
           </div>
         </div>
 
         {car.description && (
-          <div className={`border-t border-white/15 ${isMobile ? 'pt-4' : 'pt-8'}`}>
-            <h3 className="text-xs sm:text-sm font-bold font-cinzel text-white mb-2 sm:mb-4 uppercase tracking-widest">Description</h3>
-            <p className={`text-zinc-200 font-normal leading-relaxed whitespace-pre-line font-sans ${isMobile ? 'text-xs' : 'text-sm'}`}>{car.description}</p>
+          <div className={`border-t border-white/15 ${isMobile ? 'pt-3.5' : 'pt-6'}`}>
+            <h3 className="text-xs sm:text-sm font-bold font-cinzel text-white mb-2 sm:mb-3 uppercase tracking-widest">Description</h3>
+            <p className={`text-zinc-200 font-normal leading-relaxed whitespace-pre-line font-sans break-words ${isMobile ? 'text-xs' : 'text-sm'}`}>{car.description}</p>
           </div>
         )}
       </div>
@@ -359,19 +361,19 @@ export default function VehicleDetails() {
   const renderPriceBox = (isMobile: boolean) => {
     if (!car) return null;
     return (
-      <div className={`frost-card relative rounded-2xl shadow-xl font-sans ${isMobile ? 'p-5' : 'p-8 md:p-10'}`}>
-        <div className={`absolute top-0 right-0 bg-white text-black font-cinzel font-bold tracking-widest uppercase ${isMobile ? 'text-[8px] px-3 py-1.5 rounded-bl-xl rounded-tr-2xl' : 'text-[10px] px-4 py-2 rounded-bl-xl rounded-tr-2xl'}`}>
+      <div className={`frost-card relative rounded-2xl shadow-xl font-sans min-w-0 ${isMobile ? 'p-4 sm:p-5' : 'p-5 lg:p-6 xl:p-8'}`}>
+        <div className={`absolute top-0 right-0 bg-white text-black font-cinzel font-bold tracking-widest uppercase ${isMobile ? 'text-[8px] px-3 py-1.5 rounded-bl-xl rounded-tr-2xl' : 'text-[9.5px] px-3.5 py-1.5 rounded-bl-xl rounded-tr-2xl'}`}>
           Certified Motorcycle
         </div>
-        <h1 className={`font-cinzel font-bold text-white tracking-tight leading-tight uppercase ${isMobile ? 'text-lg mt-1' : 'text-2xl mt-4'}`}>
+        <h1 className={`font-cinzel font-bold text-white tracking-tight leading-tight uppercase ${isMobile ? 'text-lg mt-1' : 'text-xl sm:text-2xl mt-3'}`}>
           <span>{car.make}</span>{" "}
           <span className="font-normal text-zinc-300">{car.model}</span>
         </h1>
-        <p className={`tracking-widest uppercase text-zinc-300 font-sans font-semibold ${isMobile ? 'text-[9px] mt-1 mb-3' : 'text-[10px] mt-2 mb-6'}`}>{car.variant}</p>
-        <div className={`font-bold text-white border-b border-white/15 font-cinzel ${isMobile ? 'text-xl pb-3 mb-3' : 'text-3xl pb-5 mb-4'}`}>{formatPrice(car.price)}</div>
+        <p className={`tracking-widest uppercase text-zinc-300 font-sans font-semibold ${isMobile ? 'text-[9px] mt-1 mb-3' : 'text-[10px] mt-1.5 mb-4'}`}>{car.variant}</p>
+        <div className={`font-bold text-white border-b border-white/15 font-cinzel ${isMobile ? 'text-xl pb-3 mb-3' : 'text-2xl sm:text-3xl pb-4 mb-4'}`}>{formatPrice(car.price)}</div>
 
         {car.instagramReel && (
-          <div className={`rounded-2xl bg-white/5 border border-white/15 flex flex-col ${isMobile ? 'mb-4 p-3 gap-2' : 'mb-8 p-4.5 gap-3.5'}`}>
+          <div className={`rounded-2xl bg-white/5 border border-white/15 flex flex-col ${isMobile ? 'mb-4 p-3 gap-2' : 'mb-6 p-4 gap-3'}`}>
             <div className="flex items-center gap-3">
               <span className={`inline-flex items-center justify-center rounded-full bg-white text-black ${isMobile ? 'w-6 h-6' : 'w-7 h-7'}`}>
                 <Instagram className={isMobile ? 'w-3 h-3' : 'w-4 h-4'} />
@@ -383,29 +385,29 @@ export default function VehicleDetails() {
             </div>
             <button
               onClick={() => window.open(car.instagramReel, '_blank', 'noopener,noreferrer')}
-              className={`w-full text-center frost-pill text-white hover:text-black font-bold rounded-full uppercase tracking-widest font-sans transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] active:scale-95 ${isMobile ? 'py-2.5 text-[9px]' : 'py-3.5 text-[10px]'}`}
+              className={`w-full text-center frost-pill text-white hover:text-black font-bold rounded-full uppercase tracking-widest font-sans transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.01] active:scale-95 ${isMobile ? 'py-2.5 text-[9px]' : 'py-3 text-[10px]'}`}
             >
               Watch on Instagram ↗
             </button>
           </div>
         )}
         
-        <p className={`tracking-wider text-zinc-200 flex items-center font-sans font-semibold ${isMobile ? 'text-[10px] mb-4' : 'text-xs mb-8'}`}>
+        <p className={`tracking-wider text-zinc-200 flex items-center font-sans font-semibold ${isMobile ? 'text-[10px] mb-4' : 'text-xs mb-6'}`}>
           <span className="hover:text-white transition-colors duration-300 inline-flex items-center">
-            <MapPin className="w-4 h-4 mr-2 text-white" /> Patel Motors Showroom, Mumbai
+            <MapPin className="w-4 h-4 mr-2 text-white shrink-0" /> Patel Motors Showroom, Mumbai
           </span>
         </p>
 
         <div className={`space-y-2 font-sans uppercase font-bold ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}>
-          <button onClick={handleCall} className={`w-full bg-white hover:bg-zinc-100 text-black rounded-full transition-all duration-300 shadow-md font-sans font-bold cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3.5'}`}>
+          <button onClick={handleCall} className={`w-full bg-white hover:bg-zinc-100 text-black rounded-full transition-all duration-300 shadow-md font-sans font-bold cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
             Call Us (+91 84520 88500)
           </button>
-          <button onClick={handleWhatsApp} className={`w-full frost-pill text-white hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3.5'}`}>
-            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 12.008 0c3.205.001 6.216 1.25 8.484 3.52 2.268 2.27 3.516 5.283 3.515 8.491-.005 6.655-5.344 12.003-11.95 12.003-.111 0-.221 0-.332-.005l-5.69 2.12c-.22.08-.454.04-.63-.12l-.35-.35zM6.57 17.51l.36.21c1.55.93 3.32 1.42 5.15 1.42a9.92 9.92 0 0 0 9.95-9.94c0-2.65-1.03-5.15-2.9-7.02C17.26 3.2 14.77 2.17 12.1 2.17 6.64 2.17 2.2 6.61 2.2 12.07c0 1.93.53 3.82 1.54 5.43l.23.37-1.01 3.69 3.61-.95zM17.43 14.93c-.29-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07a8.1 8.1 0 0 1-2.39-1.48 8.94 8.94 0 0 1-1.65-2.05c-.17-.3-.02-.46.13-.61.13-.13.29-.34.44-.51.15-.17.2-.29.3-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.59-.49-.51-.67-.52l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.22 3.1 1.05 1.41 1.74 1.74 3.1 2.45a9.5 9.5 0 0 0 3.7.8c1.3-.01 2.44-.45 2.74-1 .3-.53.3-1 .22-1.12-.08-.12-.3-.19-.59-.34z"/></svg>
+          <button onClick={handleWhatsApp} className={`w-full frost-pill text-white hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
+            <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 12.008 0c3.205.001 6.216 1.25 8.484 3.52 2.268 2.27 3.516 5.283 3.515 8.491-.005 6.655-5.344 12.003-11.95 12.003-.111 0-.221 0-.332-.005l-5.69 2.12c-.22.08-.454.04-.63-.12l-.35-.35zM6.57 17.51l.36.21c1.55.93 3.32 1.42 5.15 1.42a9.92 9.92 0 0 0 9.95-9.94c0-2.65-1.03-5.15-2.9-7.02C17.26 3.2 14.77 2.17 12.1 2.17 6.64 2.17 2.2 6.61 2.2 12.07c0 1.93.53 3.82 1.54 5.43l.23.37-1.01 3.69 3.61-.95zM17.43 14.93c-.29-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07a8.1 8.1 0 0 1-2.39-1.48 8.94 8.94 0 0 1-1.65-2.05c-.17-.3-.02-.46.13-.61.13-.13.29-.34.44-.51.15-.17.2-.29.3-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.59-.49-.51-.67-.52l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.22 3.1 1.05 1.41 1.74 1.74 3.1 2.45a9.5 9.5 0 0 0 3.7.8c1.3-.01 2.44-.45 2.74-1 .3-.53.3-1 .22-1.12-.08-.12-.3-.19-.59-.34z"/></svg>
             Inquire via WhatsApp
           </button>
-          <button onClick={handleShare} className={`w-full frost-pill text-zinc-200 hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3.5'}`}>
-            <Share2 className="w-3.5 h-3.5 text-white" />
+          <button onClick={handleShare} className={`w-full frost-pill text-zinc-200 hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
+            <Share2 className="w-3.5 h-3.5 text-white shrink-0" />
             Share Listing
           </button>
         </div>
@@ -416,7 +418,7 @@ export default function VehicleDetails() {
   const renderEMICalculator = (isMobile: boolean) => {
     if (!car) return null;
     return (
-      <div className={`frost-card relative rounded-2xl shadow-xl font-sans ${isMobile ? 'p-5 space-y-4' : 'p-8 space-y-6'}`}>
+      <div className={`frost-card relative rounded-2xl shadow-xl font-sans min-w-0 ${isMobile ? 'p-4 sm:p-5 space-y-4' : 'p-5 lg:p-6 xl:p-8 space-y-5'}`}>
         <h2 className={`font-cinzel font-bold text-white uppercase tracking-widest border-b border-white/15 flex items-center justify-between ${isMobile ? 'pb-2 text-xs' : 'pb-3 text-sm'}`}>
           <span>EMI ESTIMATE CALCULATOR</span>
           <span className="text-[9px] uppercase tracking-widest font-sans text-zinc-300 font-bold">Live Rates</span>
@@ -609,13 +611,13 @@ export default function VehicleDetails() {
             {renderEMICalculator(true)}
           </div>
         ) : (
-          /* DESKTOP LAYOUT */
-          <div className="flex gap-12 text-zinc-200">
-            <div className="w-full lg:w-2/3 space-y-10">
+          /* DESKTOP & TABLET LANDSCAPE LAYOUT */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 text-zinc-200">
+            <div className="lg:col-span-7 xl:col-span-8 space-y-6 sm:space-y-8 min-w-0">
               {renderGallery(false)}
               {renderTechnicalDetails(false)}
             </div>
-            <div className="w-full lg:w-1/3 space-y-8 sticky top-24 self-start">
+            <div className="lg:col-span-5 xl:col-span-4 space-y-6 lg:sticky lg:top-24 lg:self-start min-w-0">
               {renderPriceBox(false)}
               {renderEMICalculator(false)}
             </div>

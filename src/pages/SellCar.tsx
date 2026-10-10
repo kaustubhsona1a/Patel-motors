@@ -264,9 +264,9 @@ export default function SellCar() {
                 href={forwardedData.dealerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold rounded-xl text-xs sm:text-sm tracking-wide uppercase transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 font-sans cursor-pointer"
+                className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold rounded-xl text-xs sm:text-sm tracking-wide uppercase transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 font-sans cursor-pointer text-center leading-snug"
               >
-                <MessageCircle className="w-4 h-4 fill-white" />
+                <MessageCircle className="w-4 h-4 fill-white shrink-0" />
                 <span>Forward to Patel Motors WhatsApp (+91 84520 88500)</span>
               </a>
 
@@ -274,9 +274,9 @@ export default function SellCar() {
                 href={forwardedData.customerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-2.5 px-4 bg-white/10 hover:bg-white/15 border border-white/20 text-zinc-200 hover:text-white rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center justify-center gap-2 font-sans cursor-pointer"
+                className="w-full py-2.5 px-4 bg-white/10 hover:bg-white/15 border border-white/20 text-zinc-200 hover:text-white rounded-xl text-xs font-semibold tracking-wide transition-all flex items-center justify-center gap-2 font-sans cursor-pointer text-center leading-snug"
               >
-                <Share2 className="w-3.5 h-3.5 text-zinc-300" />
+                <Share2 className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
                 <span>Forward to Seller's WhatsApp (+91 {forwardedData.summary.phone})</span>
               </a>
             </div>

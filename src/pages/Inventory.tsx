@@ -367,7 +367,7 @@ export default function Inventory() {
                 {filteredBikes.map(bike => (
                   <div
                     key={bike.id}
-                    className="group bg-[#0e0e12]/90 border border-white/10 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col justify-between transition-all duration-300 shadow-xl"
+                    className="group bg-[#0e0e12]/90 border border-white/10 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col justify-between transition-all duration-300 shadow-xl min-w-0 overflow-hidden"
                   >
                     <div>
                       {/* Image Container */}
