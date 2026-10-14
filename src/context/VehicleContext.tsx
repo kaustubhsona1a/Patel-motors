@@ -186,6 +186,7 @@ export function toDbPayload(v: any) {
   if (v.chassisNumber) metaTags.push(`meta_chassis_number:${v.chassisNumber}`);
   if (v.engineNumber) metaTags.push(`meta_engine_number:${v.engineNumber}`);
   if (v.saleInfo) metaTags.push(`meta_sale_info:${JSON.stringify(v.saleInfo)}`);
+  if (v.acquisitionInfo) metaTags.push(`meta_acquisition_info:${JSON.stringify(v.acquisitionInfo)}`);
 
   const cleanFeatures = Array.isArray(v.features)
     ? v.features.filter((f: string) => typeof f === 'string' && !f.startsWith('instagram_reel:') && !f.startsWith('meta_'))
@@ -230,6 +231,7 @@ export function toDbPayload(v: any) {
     images: Array.isArray(v.images) ? v.images : [],
     features: combinedFeatures,
     sale_info: v.saleInfo || v.sale_info || null,
+    acquisition_info: v.acquisitionInfo || v.acquisition_info || null,
     is_deleted: v.deleted !== undefined ? v.deleted : (v.is_deleted !== undefined ? v.is_deleted : false)
   };
 }
@@ -417,6 +419,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
         const chassisNumber = v.chassisNumber || v.chassis_number || extractMeta('chassis_number') || '';
         const engineNumber = v.engineNumber || v.engine_number || extractMeta('engine_number') || '';
         const saleInfo = v.saleInfo || v.sale_info || extractMeta('sale_info') || undefined;
+        const acquisitionInfo = v.acquisitionInfo || v.acquisition_info || extractMeta('acquisition_info') || undefined;
 
         let features = rawFeaturesList.filter((f: any) => typeof f === 'string' && !f.startsWith('meta_') && !f.startsWith('instagram_reel:'));
         let instagramReel = v.instagram_reel || v.instagramReel || '';
@@ -467,6 +470,7 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
           chassisNumber,
           engineNumber,
           saleInfo,
+          acquisitionInfo,
           status,
           featured: v.featured !== undefined ? Boolean(v.featured) : (v.is_featured !== undefined ? Boolean(v.is_featured) : false),
           deleted,
@@ -786,12 +790,13 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
       const dbPayload = toDbPayload(cleaned);
       console.log('[SUPABASE INSERT] Inserting vehicle:', targetId, dbPayload);
       let { data, error } = await supabase.from('vehicles').insert([dbPayload]).select();
-      if (error && (error.message?.includes('body_type') || error.message?.includes('instagram_reel') || error.message?.includes('images') || error.code === '42703')) {
+      if (error && (error.message?.includes('body_type') || error.message?.includes('instagram_reel') || error.message?.includes('images') || error.message?.includes('acquisition_info') || error.code === '42703')) {
         console.warn('[SUPABASE INSERT RETRY] Missing column on vehicles table. Retrying with fallback payload...', error);
         const retryPayload = { ...dbPayload };
         if (error.message?.includes('body_type')) delete (retryPayload as any).body_type;
         if (error.message?.includes('instagram_reel')) delete (retryPayload as any).instagram_reel;
         if (error.message?.includes('images')) delete (retryPayload as any).images;
+        if (error.message?.includes('acquisition_info')) delete (retryPayload as any).acquisition_info;
         const retryQuery = await supabase.from('vehicles').insert([retryPayload]).select();
         data = retryQuery.data;
         error = retryQuery.error;
@@ -833,12 +838,13 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
       const dbPayload = toDbPayload(cleaned);
       console.log('[SUPABASE UPDATE] Updating vehicle:', targetId, dbPayload);
       let { data, error } = await supabase.from('vehicles').update(dbPayload).eq('id', targetId).select();
-      if (error && (error.message?.includes('body_type') || error.message?.includes('instagram_reel') || error.message?.includes('images') || error.code === '42703')) {
+      if (error && (error.message?.includes('body_type') || error.message?.includes('instagram_reel') || error.message?.includes('images') || error.message?.includes('acquisition_info') || error.code === '42703')) {
         console.warn('[SUPABASE UPDATE RETRY] Missing column on vehicles table. Retrying with fallback payload...', error);
         const retryPayload = { ...dbPayload };
         if (error.message?.includes('body_type')) delete (retryPayload as any).body_type;
         if (error.message?.includes('instagram_reel')) delete (retryPayload as any).instagram_reel;
         if (error.message?.includes('images')) delete (retryPayload as any).images;
+        if (error.message?.includes('acquisition_info')) delete (retryPayload as any).acquisition_info;
         const retryQuery = await supabase.from('vehicles').update(retryPayload).eq('id', targetId).select();
         data = retryQuery.data;
         error = retryQuery.error;

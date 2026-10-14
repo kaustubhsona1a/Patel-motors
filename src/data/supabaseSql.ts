@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS public.vehicles (
     images TEXT[] DEFAULT '{}',
     features TEXT[] DEFAULT '{}',
     sale_info JSONB,
+    acquisition_info JSONB,
     is_deleted BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -159,7 +160,36 @@ CREATE TABLE IF NOT EXISTS public.sales_invoices (
 );
 
 -- ==============================================================================
--- 8. PERFORMANCE INDEXES
+-- 8. TABLE: delivery_notes
+-- Inward motorcycle acquisition delivery notes and legal seller handover undertakings.
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.delivery_notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id UUID REFERENCES public.vehicles(id) ON DELETE SET NULL,
+    delivery_note_number TEXT NOT NULL UNIQUE,
+    acquisition_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    handover_time TEXT,
+    purchase_amount NUMERIC NOT NULL DEFAULT 0,
+    seller_name TEXT NOT NULL,
+    seller_phone TEXT NOT NULL,
+    seller_email TEXT,
+    seller_address TEXT,
+    seller_identity TEXT,
+    payment_method TEXT NOT NULL DEFAULT 'Bank Transfer (NEFT/RTGS)',
+    payment_status TEXT NOT NULL DEFAULT 'Paid in Full',
+    payment_ref TEXT,
+    original_rc_received BOOLEAN DEFAULT true,
+    insurance_copy_received BOOLEAN DEFAULT true,
+    rto_forms_signed BOOLEAN DEFAULT true,
+    puc_valid BOOLEAN DEFAULT true,
+    keys_count INTEGER DEFAULT 2,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ==============================================================================
+-- 9. PERFORMANCE INDEXES
 -- ==============================================================================
 CREATE INDEX IF NOT EXISTS idx_vehicles_status ON public.vehicles(status) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_vehicles_make ON public.vehicles(make);
@@ -167,6 +197,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicles_price ON public.vehicles(price);
 CREATE INDEX IF NOT EXISTS idx_vehicles_year ON public.vehicles(year);
 CREATE INDEX IF NOT EXISTS idx_vehicles_featured ON public.vehicles(featured);
 CREATE INDEX IF NOT EXISTS idx_vehicles_created_at ON public.vehicles(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vehicles_acquisition_info ON public.vehicles USING gin (acquisition_info);
 CREATE INDEX IF NOT EXISTS idx_vehicle_images_vehicle_id ON public.vehicle_images(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_vehicle_images_display_order ON public.vehicle_images(vehicle_id, display_order);
 CREATE INDEX IF NOT EXISTS idx_leads_status ON public.leads(status);
@@ -175,6 +206,10 @@ CREATE INDEX IF NOT EXISTS idx_leads_created_at ON public.leads(created_at DESC)
 CREATE INDEX IF NOT EXISTS idx_sales_invoices_vehicle_id ON public.sales_invoices(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_sales_invoices_invoice_number ON public.sales_invoices(invoice_number);
 CREATE INDEX IF NOT EXISTS idx_sales_invoices_customer_phone ON public.sales_invoices(customer_phone);
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_vehicle_id ON public.delivery_notes(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_number ON public.delivery_notes(delivery_note_number);
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_seller_phone ON public.delivery_notes(seller_phone);
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_acquisition_date ON public.delivery_notes(acquisition_date DESC);
 
 -- ==============================================================================
 -- 9. AUTOMATIC TRIGGERS (UPDATED_AT & CACHE INVALIDATION)
@@ -206,6 +241,11 @@ CREATE TRIGGER trg_site_settings_updated_at
 DROP TRIGGER IF EXISTS trg_sales_invoices_updated_at ON public.sales_invoices;
 CREATE TRIGGER trg_sales_invoices_updated_at
     BEFORE UPDATE ON public.sales_invoices
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_delivery_notes_updated_at ON public.delivery_notes;
+CREATE TRIGGER trg_delivery_notes_updated_at
+    BEFORE UPDATE ON public.delivery_notes
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- Trigger: Invalidate vehicle metadata version on changes
@@ -254,6 +294,7 @@ ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicle_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.delivery_notes ENABLE ROW LEVEL SECURITY;
 
 -- Metadata Versions Policies
 DROP POLICY IF EXISTS "Public can read metadata versions" ON public.metadata_versions;
@@ -303,6 +344,11 @@ CREATE POLICY "Allow manage leads" ON public.leads
 -- Sales Invoices Policies
 DROP POLICY IF EXISTS "Allow manage sales invoices" ON public.sales_invoices;
 CREATE POLICY "Allow manage sales invoices" ON public.sales_invoices
+    FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- Delivery Notes Policies (Inward vehicle acquisition notes)
+DROP POLICY IF EXISTS "Allow manage delivery notes" ON public.delivery_notes;
+CREATE POLICY "Allow manage delivery notes" ON public.delivery_notes
     FOR ALL TO public USING (true) WITH CHECK (true);
 
 -- ==============================================================================
@@ -386,3 +432,71 @@ INSERT INTO public.site_settings (id)
 VALUES ('00000000-0000-0000-0000-000000000000'::uuid)
 ON CONFLICT (id) DO NOTHING;
 `;
+
+// ==============================================================================
+// DELIVERY NOTE INCREMENTAL MIGRATION SCRIPT
+// For existing Supabase databases that already have vehicles and settings tables.
+// ==============================================================================
+export const DELIVERY_NOTE_MIGRATION_SQL = `-- ==============================================================================
+-- PATEL MOTORS - DELIVERY NOTE (ACQUIRE BIKE) SUPABASE MIGRATION
+-- ==============================================================================
+-- Run this in your Supabase Project -> SQL Editor -> New Query -> Run.
+-- Safe to run multiple times (idempotent).
+-- ==============================================================================
+
+-- 1. Add acquisition_info JSONB column to public.vehicles table
+-- Stores complete inward acquisition records (seller details, verification proofs, checklist)
+ALTER TABLE IF EXISTS public.vehicles 
+ADD COLUMN IF NOT EXISTS acquisition_info JSONB;
+
+-- 2. Index on acquisition_info for fast JSON query performance
+CREATE INDEX IF NOT EXISTS idx_vehicles_acquisition_info 
+ON public.vehicles USING gin (acquisition_info);
+
+-- 3. Dedicated Relational Table: delivery_notes
+-- Inward motorcycle acquisition delivery notes and legal seller handover undertakings
+CREATE TABLE IF NOT EXISTS public.delivery_notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id UUID REFERENCES public.vehicles(id) ON DELETE SET NULL,
+    delivery_note_number TEXT NOT NULL UNIQUE,
+    acquisition_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    handover_time TEXT,
+    purchase_amount NUMERIC NOT NULL DEFAULT 0,
+    seller_name TEXT NOT NULL,
+    seller_phone TEXT NOT NULL,
+    seller_email TEXT,
+    seller_address TEXT,
+    seller_identity TEXT,
+    payment_method TEXT NOT NULL DEFAULT 'Bank Transfer (NEFT/RTGS)',
+    payment_status TEXT NOT NULL DEFAULT 'Paid in Full',
+    payment_ref TEXT,
+    original_rc_received BOOLEAN DEFAULT true,
+    insurance_copy_received BOOLEAN DEFAULT true,
+    rto_forms_signed BOOLEAN DEFAULT true,
+    puc_valid BOOLEAN DEFAULT true,
+    keys_count INTEGER DEFAULT 2,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 4. Performance Indexes for delivery_notes
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_vehicle_id ON public.delivery_notes(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_number ON public.delivery_notes(delivery_note_number);
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_seller_phone ON public.delivery_notes(seller_phone);
+CREATE INDEX IF NOT EXISTS idx_delivery_notes_acquisition_date ON public.delivery_notes(acquisition_date DESC);
+
+-- 5. Updated_at Trigger for delivery_notes
+DROP TRIGGER IF EXISTS trg_delivery_notes_updated_at ON public.delivery_notes;
+CREATE TRIGGER trg_delivery_notes_updated_at
+    BEFORE UPDATE ON public.delivery_notes
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- 6. Row Level Security (RLS) & Access Policy
+ALTER TABLE public.delivery_notes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow manage delivery notes" ON public.delivery_notes;
+CREATE POLICY "Allow manage delivery notes" ON public.delivery_notes
+    FOR ALL TO public USING (true) WITH CHECK (true);
+`;
+

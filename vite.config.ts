@@ -23,7 +23,7 @@ function publicUploadPlugin() {
               return res.end(JSON.stringify({ error: 'filename and base64 required' }));
             }
             const safeName = path.basename(filename);
-            const publicDir = path.resolve(__dirname, 'public');
+            const publicDir = path.resolve(process.cwd(), 'public');
             if (!fs.existsSync(publicDir)) {
               fs.mkdirSync(publicDir, { recursive: true });
             }

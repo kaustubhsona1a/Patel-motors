@@ -1,11 +1,23 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect, useRef } from 'react';
-import { UploadCloud, X, Plus, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Camera, ShieldCheck, Sparkles, DollarSign, FileCheck, Layers } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { 
+  UploadCloud, X, Plus, AlertCircle, CheckCircle2, Loader2, ArrowLeft, 
+  Camera, ShieldCheck, Sparkles, DollarSign, FileCheck, Layers,
+  Printer, FileText, Check, ChevronDown, ChevronUp, RefreshCw, Eye, 
+  User, Phone, MapPin, Hash, ShieldAlert, Award
+} from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useVehicles } from '../../context/VehicleContext';
-import { Vehicle, BIKE_TYPES, VehicleStatus, formatPrice } from '../../data/mockData';
+import { Vehicle, BIKE_TYPES, VehicleStatus, formatPrice, AcquisitionRecord } from '../../data/mockData';
 import { uploadMultipleImagesToStorage, deleteImagesFromStorage } from '../../lib/supabase';
 import { processUploadFiles } from '../../lib/heic';
 import { SmartImage } from '../../components/SmartImage';
+import { 
+  generateDeliveryNoteNumber, 
+  printDeliveryNote, 
+  numberToWordsIndian, 
+  PATEL_MOTORS_DEALERSHIP 
+} from '../../lib/invoice';
 
 const RECOMMENDED_ANGLES = [
   "Front View",
@@ -76,6 +88,30 @@ export default function AdminAddVehicle() {
   const [images, setImages] = useState<string[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
+  // Delivery Note & Inward Acquisition State
+  const [includeDeliveryNote, setIncludeDeliveryNote] = useState(false);
+  const [previewDeliveryNoteOpen, setPreviewDeliveryNoteOpen] = useState(false);
+  const [acquisitionData, setAcquisitionData] = useState<AcquisitionRecord>({
+    deliveryNoteNumber: generateDeliveryNoteNumber(),
+    acquisitionDate: new Date().toISOString().split('T')[0],
+    handoverTime: '11:30 AM IST',
+    sellerName: '',
+    sellerPhone: '',
+    sellerEmail: '',
+    sellerAddress: '',
+    sellerIdentity: '',
+    purchaseAmount: 0,
+    paymentMethod: 'Bank Transfer (NEFT/RTGS)',
+    paymentStatus: 'Paid in Full',
+    paymentRef: '',
+    originalRcReceived: true,
+    insuranceCopyReceived: true,
+    rtoFormsSigned: true,
+    pucValid: true,
+    keysCount: 2,
+    notes: ''
+  });
+
   useEffect(() => {
     if (isEditing && id) {
       const bike = vehicles.find(v => v.id === id);
@@ -111,6 +147,21 @@ export default function AdminAddVehicle() {
           featured: Boolean(bike.featured)
         });
         setImages(bike.images || []);
+
+        if (bike.acquisitionInfo) {
+          setAcquisitionData({
+            ...bike.acquisitionInfo,
+            deliveryNoteNumber: bike.acquisitionInfo.deliveryNoteNumber || generateDeliveryNoteNumber(bike),
+            acquisitionDate: bike.acquisitionInfo.acquisitionDate || new Date().toISOString().split('T')[0],
+            purchaseAmount: bike.acquisitionInfo.purchaseAmount || (bike.purchasePrice || 0)
+          });
+          setIncludeDeliveryNote(true);
+        } else if (bike.purchasePrice) {
+          setAcquisitionData(prev => ({
+            ...prev,
+            purchaseAmount: bike.purchasePrice || 0
+          }));
+        }
       }
     }
   }, [id, isEditing, vehicles]);
@@ -212,9 +263,27 @@ export default function AdminAddVehicle() {
     }
   };
 
+  const getAcquisitionPayload = (): AcquisitionRecord | undefined => {
+    if (!includeDeliveryNote && !acquisitionData.sellerName.trim()) {
+      return undefined;
+    }
+    return {
+      ...acquisitionData,
+      sellerName: acquisitionData.sellerName.trim() || 'Seller (Previous Owner)',
+      sellerPhone: acquisitionData.sellerPhone.trim() || 'N/A',
+      sellerEmail: acquisitionData.sellerEmail?.trim() || undefined,
+      sellerAddress: acquisitionData.sellerAddress?.trim() || undefined,
+      sellerIdentity: acquisitionData.sellerIdentity?.trim() || undefined,
+      purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0,
+      deliveryNoteNumber: acquisitionData.deliveryNoteNumber || generateDeliveryNoteNumber({ make: formData.make }),
+      generatedAt: acquisitionData.generatedAt || new Date().toISOString()
+    };
+  };
+
   const handleSaveDraft = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     formSaved.current = true;
+    const acqInfo = getAcquisitionPayload();
 
     // For drafts, photos, VIN, and engine numbers are completely optional
     const bikePayload: Partial<Vehicle> = {
@@ -225,7 +294,8 @@ export default function AdminAddVehicle() {
       registrationYear: Number(formData.registrationYear || formData.year) || new Date().getFullYear(),
       registration: formData.registration.trim().toUpperCase(),
       price: formData.price ? Number(formData.price) : 0,
-      purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : undefined,
+      purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : (acqInfo?.purchaseAmount || undefined),
+      acquisitionInfo: acqInfo,
       mileage: formData.mileage ? Number(formData.mileage) : 0,
       bodyType: formData.bodyType,
       fuelType: formData.fuelType,
@@ -263,6 +333,7 @@ export default function AdminAddVehicle() {
         registration: bikePayload.registration,
         price: bikePayload.price!,
         purchasePrice: bikePayload.purchasePrice,
+        acquisitionInfo: bikePayload.acquisitionInfo,
         mileage: bikePayload.mileage!,
         bodyType: bikePayload.bodyType,
         fuelType: bikePayload.fuelType!,
@@ -301,6 +372,8 @@ export default function AdminAddVehicle() {
       return;
     }
 
+    const acqInfo = getAcquisitionPayload();
+
     const bikePayload: Partial<Vehicle> = {
       make: formData.make.trim(),
       model: formData.model.trim(),
@@ -309,7 +382,8 @@ export default function AdminAddVehicle() {
       registrationYear: Number(formData.registrationYear || formData.year),
       registration: formData.registration.trim().toUpperCase(),
       price: Number(formData.price) || 0,
-      purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : undefined,
+      purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : (acqInfo?.purchaseAmount || undefined),
+      acquisitionInfo: acqInfo,
       mileage: Number(formData.mileage) || 0,
       bodyType: formData.bodyType,
       fuelType: formData.fuelType,
@@ -347,6 +421,7 @@ export default function AdminAddVehicle() {
         registration: bikePayload.registration,
         price: bikePayload.price!,
         purchasePrice: bikePayload.purchasePrice,
+        acquisitionInfo: bikePayload.acquisitionInfo,
         mileage: bikePayload.mileage!,
         bodyType: bikePayload.bodyType,
         fuelType: bikePayload.fuelType!,
@@ -374,6 +449,103 @@ export default function AdminAddVehicle() {
     }
 
     navigate('/dealer-management/inventory');
+  };
+
+  const handleSaveAndGenerateDeliveryNote = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    formSaved.current = true;
+    
+    // Ensure includeDeliveryNote is active
+    setIncludeDeliveryNote(true);
+
+    const acqInfo: AcquisitionRecord = {
+      ...acquisitionData,
+      sellerName: acquisitionData.sellerName.trim() || 'Seller (Previous Owner)',
+      sellerPhone: acquisitionData.sellerPhone.trim() || 'N/A',
+      sellerEmail: acquisitionData.sellerEmail?.trim() || undefined,
+      sellerAddress: acquisitionData.sellerAddress?.trim() || undefined,
+      sellerIdentity: acquisitionData.sellerIdentity?.trim() || undefined,
+      purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0,
+      deliveryNoteNumber: acquisitionData.deliveryNoteNumber || generateDeliveryNoteNumber({ make: formData.make }),
+      generatedAt: acquisitionData.generatedAt || new Date().toISOString()
+    };
+
+    const bikePayload: Partial<Vehicle> = {
+      make: formData.make.trim() || 'Pre-Owned Motorcycle',
+      model: formData.model.trim() || 'Model',
+      variant: formData.variant.trim(),
+      year: Number(formData.year) || new Date().getFullYear(),
+      registrationYear: Number(formData.registrationYear || formData.year) || new Date().getFullYear(),
+      registration: formData.registration.trim().toUpperCase(),
+      price: Number(formData.price) || 0,
+      purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : acqInfo.purchaseAmount,
+      acquisitionInfo: acqInfo,
+      mileage: Number(formData.mileage) || 0,
+      bodyType: formData.bodyType,
+      fuelType: formData.fuelType,
+      transmission: formData.transmission,
+      engine: formData.engine.trim() || (formData.engineCC ? `${formData.engineCC} cc` : 'Standard'),
+      engineCC: formData.engineCC ? Number(formData.engineCC) : undefined,
+      color: formData.color.trim() || 'Standard',
+      ownership: formData.ownership,
+      insuranceStatus: formData.insuranceStatus,
+      rcStatus: formData.rcStatus,
+      serviceHistory: formData.serviceHistory,
+      condition: formData.condition,
+      location: formData.location,
+      chassisNumber: formData.chassisNumber.trim() || undefined,
+      engineNumber: formData.engineNumber.trim() || undefined,
+      description: formData.description.trim(),
+      inspectionNotes: formData.inspectionNotes.trim(),
+      instagramReel: formData.instagramReel.trim(),
+      status: formData.status || 'Available',
+      featured: formData.featured,
+      images: images || [],
+      features: []
+    };
+
+    if (isEditing && id) {
+      await updateVehicle(id, bikePayload);
+    } else {
+      const newBike: Vehicle = {
+        id: 'bike_' + Date.now().toString(),
+        make: bikePayload.make!,
+        model: bikePayload.model!,
+        variant: bikePayload.variant,
+        year: bikePayload.year!,
+        registrationYear: bikePayload.registrationYear,
+        registration: bikePayload.registration,
+        price: bikePayload.price!,
+        purchasePrice: bikePayload.purchasePrice,
+        acquisitionInfo: bikePayload.acquisitionInfo,
+        mileage: bikePayload.mileage!,
+        bodyType: bikePayload.bodyType,
+        fuelType: bikePayload.fuelType!,
+        transmission: bikePayload.transmission!,
+        engine: bikePayload.engine!,
+        engineCC: bikePayload.engineCC,
+        color: bikePayload.color!,
+        ownership: bikePayload.ownership!,
+        insuranceStatus: bikePayload.insuranceStatus,
+        rcStatus: bikePayload.rcStatus,
+        serviceHistory: bikePayload.serviceHistory,
+        condition: bikePayload.condition,
+        location: bikePayload.location,
+        chassisNumber: bikePayload.chassisNumber,
+        engineNumber: bikePayload.engineNumber,
+        description: bikePayload.description,
+        inspectionNotes: bikePayload.inspectionNotes,
+        instagramReel: bikePayload.instagramReel,
+        status: bikePayload.status!,
+        featured: bikePayload.featured,
+        images: images || [],
+        features: []
+      };
+      await addVehicle(newBike);
+    }
+
+    // Immediately pop open the Delivery Note preview
+    setPreviewDeliveryNoteOpen(true);
   };
 
   return (
@@ -753,13 +925,18 @@ export default function AdminAddVehicle() {
           </div>
         </div>
 
-        {/* SECTION 4: PRICING & MARGIN */}
-        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-5">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
-            <DollarSign className="w-4 h-4 text-orange-400" />
-            <h2 className="font-serif font-bold text-white text-base uppercase tracking-wider">
-              4. Acquisition Cost & Selling Price
-            </h2>
+        {/* SECTION 4: PRICING & SELLER DELIVERY NOTE */}
+        <div className="bg-zinc-950/70 border border-white/10 rounded-2xl p-4 sm:p-7 backdrop-blur-md shadow-xl space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <div className="flex items-center space-x-2.5">
+              <DollarSign className="w-4 h-4 text-orange-400" />
+              <h2 className="font-serif font-bold text-white text-base uppercase tracking-wider">
+                4. Acquisition Cost, Selling Price & Delivery Note
+              </h2>
+            </div>
+            <span className="text-[9.5px] font-mono text-zinc-400 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded uppercase font-bold tracking-wider">
+              Dealer Confidential
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
@@ -771,7 +948,11 @@ export default function AdminAddVehicle() {
                 type="number" 
                 placeholder="e.g. 1420000"
                 value={formData.purchasePrice}
-                onChange={e => setFormData({ ...formData, purchasePrice: e.target.value })}
+                onChange={e => {
+                  const val = e.target.value;
+                  setFormData(prev => ({ ...prev, purchasePrice: val }));
+                  setAcquisitionData(prev => ({ ...prev, purchaseAmount: Number(val) || 0 }));
+                }}
                 className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all font-mono font-bold"
               />
               <p className="text-[10px] text-zinc-500 mt-1 font-mono">
@@ -794,6 +975,338 @@ export default function AdminAddVehicle() {
               <p className="text-[10px] text-zinc-500 mt-1 font-mono">
                 Public showroom listing price displayed across customer website.
               </p>
+            </div>
+          </div>
+
+          {/* INWARD DELIVERY NOTE ACCORDION / TOGGLE */}
+          <div className="pt-4 border-t border-white/10">
+            <div className="p-4 sm:p-5 bg-zinc-900/50 border border-white/10 rounded-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-serif font-bold text-white">Inward Delivery Note & Seller Particulars</h3>
+                      <span className="text-[9px] font-mono uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-bold">
+                        Voucher
+                      </span>
+                    </div>
+                    <p className="text-zinc-400 text-xs mt-0.5 max-w-xl">
+                      Generate an official Two-Wheeler Acquisition Delivery Note & Legal Handover Undertaking from whom you purchased this bike (similar to the selling invoice).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIncludeDeliveryNote(!includeDeliveryNote)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                      includeDeliveryNote 
+                        ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20' 
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10'
+                    }`}
+                  >
+                    {includeDeliveryNote ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    <span>{includeDeliveryNote ? 'Delivery Note Enabled' : 'Add Seller & Note'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Notice */}
+              <div className="flex items-center gap-2 text-[10.5px] font-mono text-zinc-400 bg-black/40 border border-white/5 p-2.5 rounded-lg">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  <strong>Confidentiality Notice:</strong> The seller's details and purchase price are kept strictly confidential in private dealer records. They will <strong>NEVER</strong> be displayed in the available bike details or public catalog.
+                </span>
+              </div>
+
+              {/* Delivery Note Form Inputs */}
+              {includeDeliveryNote && (
+                <div className="pt-3 border-t border-white/10 space-y-4 animate-fade-in text-xs">
+                  {/* Seller particulars */}
+                  <div>
+                    <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-orange-400 mb-2.5 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5" />
+                      <span>1. Person / Customer Purchased From</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Seller Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Vikram Malhotra"
+                          value={acquisitionData.sellerName}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, sellerName: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-sans text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Seller Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="e.g. +91 98201 55432"
+                          value={acquisitionData.sellerPhone}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, sellerPhone: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Govt ID Proof (Aadhaar / PAN / DL)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Aadhaar: XXXX-XXXX-4912"
+                          value={acquisitionData.sellerIdentity || ''}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, sellerIdentity: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Seller Address (City & State)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Flat 402, Sea Green Apts, Prabhadevi, Dadar West, Mumbai - 400028"
+                          value={acquisitionData.sellerAddress || ''}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, sellerAddress: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-sans text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Seller Email (Optional)
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="seller@example.com"
+                          value={acquisitionData.sellerEmail || ''}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, sellerEmail: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-sans text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Acquisition & Settlement */}
+                  <div className="pt-3 border-t border-white/10">
+                    <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-orange-400 mb-2.5 flex items-center gap-1.5">
+                      <DollarSign className="w-3.5 h-3.5" />
+                      <span>2. Handover & Settlement Particulars</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Delivery Note #
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={acquisitionData.deliveryNoteNumber}
+                            onChange={e => setAcquisitionData({ ...acquisitionData, deliveryNoteNumber: e.target.value })}
+                            className="w-full pl-3 pr-8 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs font-bold"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setAcquisitionData(prev => ({ ...prev, deliveryNoteNumber: generateDeliveryNoteNumber({ make: formData.make }) }))}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                            title="Generate new number"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Date of Handover
+                        </label>
+                        <input
+                          type="date"
+                          value={acquisitionData.acquisitionDate}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, acquisitionDate: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Handover Time
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 11:30 AM IST"
+                          value={acquisitionData.handoverTime || '11:30 AM IST'}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, handoverTime: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Payment Mode
+                        </label>
+                        <select
+                          value={acquisitionData.paymentMethod}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, paymentMethod: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-sans text-xs"
+                        >
+                          <option value="Bank Transfer (NEFT/RTGS)">Bank Transfer (NEFT/RTGS)</option>
+                          <option value="UPI">UPI Payment</option>
+                          <option value="Cheque">Bank Cheque</option>
+                          <option value="Cash">Cash</option>
+                          <option value="Card">Card</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Payment Ref / UTR / Cheque #
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. UTR/HDFC8192310"
+                          value={acquisitionData.paymentRef || ''}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, paymentRef: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Payment Status
+                        </label>
+                        <select
+                          value={acquisitionData.paymentStatus}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, paymentStatus: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-sans text-xs"
+                        >
+                          <option value="Paid in Full">Paid in Full (Disbursed)</option>
+                          <option value="Token / Advance">Token / Advance Paid</option>
+                          <option value="Cheque Pending">Cheque Pending Clearance</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                          Number of Keys Received
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={5}
+                          value={acquisitionData.keysCount || 2}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, keysCount: Number(e.target.value) || 2 })}
+                          className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Checklist items */}
+                  <div className="pt-3 border-t border-white/10">
+                    <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-orange-400 mb-2 flex items-center gap-1.5">
+                      <FileCheck className="w-3.5 h-3.5" />
+                      <span>3. Documents Received Checklist</span>
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono text-xs text-zinc-300">
+                      <label className="flex items-center gap-2 p-2 bg-zinc-900 rounded-lg border border-white/5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={acquisitionData.originalRcReceived !== false}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, originalRcReceived: e.target.checked })}
+                          className="rounded border-white/20 text-orange-500 focus:ring-0"
+                        />
+                        <span>Original RC Book</span>
+                      </label>
+                      <label className="flex items-center gap-2 p-2 bg-zinc-900 rounded-lg border border-white/5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={acquisitionData.rtoFormsSigned !== false}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, rtoFormsSigned: e.target.checked })}
+                          className="rounded border-white/20 text-orange-500 focus:ring-0"
+                        />
+                        <span>Forms 29 & 30 Signed</span>
+                      </label>
+                      <label className="flex items-center gap-2 p-2 bg-zinc-900 rounded-lg border border-white/5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={acquisitionData.insuranceCopyReceived !== false}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, insuranceCopyReceived: e.target.checked })}
+                          className="rounded border-white/20 text-orange-500 focus:ring-0"
+                        />
+                        <span>Insurance Policy</span>
+                      </label>
+                      <label className="flex items-center gap-2 p-2 bg-zinc-900 rounded-lg border border-white/5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={acquisitionData.pucValid !== false}
+                          onChange={e => setAcquisitionData({ ...acquisitionData, pucValid: e.target.checked })}
+                          className="rounded border-white/20 text-orange-500 focus:ring-0"
+                        />
+                        <span>Valid PUC Certificate</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Actions for Delivery Note */}
+                  <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-[11px] font-mono text-zinc-400">
+                      Agreed Consideration: <strong className="text-white font-bold">{formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}</strong>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDeliveryNoteOpen(true)}
+                        className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-mono uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 border border-white/10 cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-orange-400" />
+                        <span>Preview Delivery Note</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const previewBike: Partial<Vehicle> = {
+                            make: formData.make || 'Motorcycle',
+                            model: formData.model || 'Model',
+                            variant: formData.variant,
+                            year: Number(formData.year) || new Date().getFullYear(),
+                            registration: formData.registration || 'N/A',
+                            mileage: Number(formData.mileage) || 0,
+                            chassisNumber: formData.chassisNumber,
+                            engineNumber: formData.engineNumber,
+                            fuelType: formData.fuelType,
+                            ownership: formData.ownership,
+                            color: formData.color,
+                            price: Number(formData.price) || 0,
+                            purchasePrice: Number(formData.purchasePrice) || acquisitionData.purchaseAmount
+                          };
+                          printDeliveryNote(previewBike, {
+                            ...acquisitionData,
+                            purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0
+                          });
+                        }}
+                        className="px-4 py-2 bg-white text-zinc-950 hover:bg-zinc-200 rounded-xl text-xs font-mono uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Print / PDF</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -986,24 +1499,266 @@ export default function AdminAddVehicle() {
             Cancel
           </Link>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleSaveDraft}
-              className="flex-1 sm:flex-initial px-6 py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-mono uppercase font-bold tracking-widest transition-all border border-white/10"
+              className="flex-1 sm:flex-initial px-5 py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-mono uppercase font-bold tracking-widest transition-all border border-white/10"
             >
-              Save as Draft
+              Save Draft
             </button>
+            {includeDeliveryNote && (
+              <button
+                type="button"
+                onClick={handleSaveAndGenerateDeliveryNote}
+                className="flex-1 sm:flex-initial px-6 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-zinc-950 font-black rounded-xl text-xs font-mono uppercase tracking-widest transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Save & Generate Delivery Note</span>
+              </button>
+            )}
             <button
               type="submit"
               onClick={() => setFormData(prev => ({ ...prev, status: 'Available' }))}
-              className="flex-1 sm:flex-initial px-8 py-3.5 bg-white hover:bg-zinc-200 text-zinc-950 rounded-xl text-xs font-mono uppercase font-bold tracking-widest transition-all shadow-lg active:scale-95"
+              className="flex-1 sm:flex-initial px-7 py-3.5 bg-white hover:bg-zinc-200 text-zinc-950 rounded-xl text-xs font-mono uppercase font-bold tracking-widest transition-all shadow-lg active:scale-95 cursor-pointer"
             >
-              {isEditing ? 'Save Changes' : 'Save & Publish Bike'}
+              {isEditing ? 'Save Changes' : 'Save & Publish'}
             </button>
           </div>
         </div>
       </form>
+
+      {/* INWARD DELIVERY NOTE PREVIEW & PRINT MODAL */}
+      {previewDeliveryNoteOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto overflow-x-hidden p-1.5 sm:p-4 md:p-6 flex justify-center items-start sm:items-center">
+          <div 
+            onClick={() => setPreviewDeliveryNoteOpen(false)} 
+            className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity" 
+          />
+          <div className="relative z-10 w-full max-w-4xl my-2 sm:my-8 bg-zinc-950 border border-white/20 rounded-xl sm:rounded-3xl p-2.5 sm:p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/10 mb-3 sm:mb-4">
+              <div>
+                <span className="text-[9px] sm:text-[9.5px] font-mono text-orange-400 uppercase tracking-widest font-bold block">
+                  Official Inward Purchase & Delivery Challan
+                </span>
+                <h3 className="text-sm sm:text-xl font-serif font-bold text-white uppercase tracking-wider mt-0.5 truncate max-w-[190px] sm:max-w-md">
+                  #{acquisitionData.deliveryNoteNumber}
+                </h3>
+              </div>
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const previewBike: Partial<Vehicle> = {
+                      make: formData.make || 'Pre-Owned Motorcycle',
+                      model: formData.model || 'Model',
+                      variant: formData.variant,
+                      year: Number(formData.year) || new Date().getFullYear(),
+                      registration: formData.registration || 'N/A',
+                      mileage: Number(formData.mileage) || 0,
+                      chassisNumber: formData.chassisNumber,
+                      engineNumber: formData.engineNumber,
+                      fuelType: formData.fuelType,
+                      ownership: formData.ownership,
+                      color: formData.color,
+                      price: Number(formData.price) || 0,
+                      purchasePrice: Number(formData.purchasePrice) || acquisitionData.purchaseAmount
+                    };
+                    printDeliveryNote(previewBike, {
+                      ...acquisitionData,
+                      purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0
+                    });
+                  }}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-zinc-950 hover:bg-zinc-200 rounded-lg sm:rounded-xl text-[10.5px] sm:text-xs font-mono uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print / PDF</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setPreviewDeliveryNoteOpen(false)} 
+                  className="p-1.5 sm:p-2 text-zinc-400 hover:text-white bg-zinc-900 rounded-full border border-white/10 cursor-pointer"
+                  aria-label="Close delivery note"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Embedded Delivery Note Render: Clean, Crisp, 100% visible on mobile and desktop */}
+            <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
+                <div>
+                  <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
+                  <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
+                    Two-Wheeler Acquisition & Delivery Challan
+                  </div>
+                  <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
+                    Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
+                    Phone: +91 84520 88500 | Email: sales@patelmotors.in<br />
+                    GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                  </div>
+                </div>
+                <div className="text-left sm:text-right font-mono shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-zinc-200">
+                  <div className="inline-block bg-black text-white text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1">
+                    Vehicle Delivery Note & Undertaking
+                  </div>
+                  <div className="font-bold text-xs sm:text-sm text-black">#{acquisitionData.deliveryNoteNumber}</div>
+                  <div className="text-zinc-600 text-[9.5px] sm:text-[11px] mt-0.5">Date: {acquisitionData.acquisitionDate || new Date().toISOString().split('T')[0]}</div>
+                  <div className="text-zinc-600 text-[9.5px] sm:text-[11px]">Time: {acquisitionData.handoverTime || '11:30 AM IST'}</div>
+                  <div className="font-bold text-[9.5px] sm:text-[11px] mt-0.5 text-emerald-700">
+                    Status: {acquisitionData.paymentStatus || 'Paid in Full'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Two columns: Seller & Motorcycle Particulars */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                <div className="bg-zinc-50 p-2.5 sm:p-3 rounded-lg border border-zinc-200">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+                    1. Seller / Previous Owner Details (Purchased From)
+                  </div>
+                  <div className="font-bold text-xs sm:text-sm text-black">{acquisitionData.sellerName || 'Seller (Previous Owner)'}</div>
+                  <div className="text-[10px] sm:text-[10.5px] text-zinc-700 mt-0.5">Phone: <strong>{acquisitionData.sellerPhone || 'Not Specified'}</strong></div>
+                  {acquisitionData.sellerEmail && (
+                    <div className="text-[9.5px] text-zinc-700">Email: {acquisitionData.sellerEmail}</div>
+                  )}
+                  {acquisitionData.sellerAddress && (
+                    <div className="text-[9.5px] text-zinc-700">Address: {acquisitionData.sellerAddress}</div>
+                  )}
+                  {acquisitionData.sellerIdentity && (
+                    <div className="text-[9.5px] text-zinc-700 font-mono mt-0.5">
+                      ID Proof: <strong>{acquisitionData.sellerIdentity}</strong>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-zinc-50 p-2.5 sm:p-3 rounded-lg border border-zinc-200">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+                    2. Motorcycle Particulars & Physical Condition
+                  </div>
+                  <div className="font-bold text-xs sm:text-sm text-black">
+                    {formData.year} {formData.make || 'Motorcycle'} {formData.model} {formData.variant ? `(${formData.variant})` : ''}
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9.5px] sm:text-[10px] text-zinc-700 mt-1 font-mono">
+                    <div>Reg: <strong className="text-black">{formData.registration || 'N/A'}</strong></div>
+                    <div>Odo: <strong className="text-black">{Number(formData.mileage || 0).toLocaleString('en-IN')} KM</strong></div>
+                    <div>Chassis: <span className="text-zinc-800">{formData.chassisNumber || 'Verified'}</span></div>
+                    <div>Engine: <span className="text-zinc-800">{formData.engineNumber || 'Verified'}</span></div>
+                    <div>Owner: <span className="text-zinc-800">{formData.ownership || '1st Owner'}</span></div>
+                    <div>Fuel: <span className="text-zinc-800">{formData.fuelType || 'Petrol'}</span></div>
+                    <div>Keys: <strong className="text-black">{acquisitionData.keysCount || 2} Original Keys</strong></div>
+                    <div>RC: <strong className="text-black">{acquisitionData.originalRcReceived !== false ? 'Original Submitted' : 'Pending'}</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Line items table */}
+              <div className="border border-zinc-200 rounded-lg overflow-hidden mb-3 sm:mb-4">
+                <table className="w-full text-left">
+                  <thead className="bg-zinc-900 text-white text-[9.5px] uppercase font-mono font-bold tracking-wider">
+                    <tr>
+                      <th className="p-2 sm:p-2.5">Particulars / Motorcycle Acquired</th>
+                      <th className="p-2 sm:p-2.5 text-center">Year</th>
+                      <th className="p-2 sm:p-2.5 text-center">Odometer</th>
+                      <th className="p-2 sm:p-2.5 text-right">Agreed Purchase Price</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200 font-sans text-[11px]">
+                    <tr>
+                      <td className="p-2.5">
+                        <strong className="text-black text-xs">
+                          {formData.make} {formData.model} {formData.variant || ''}
+                        </strong>
+                        <div className="text-[9.5px] text-zinc-500 mt-0.5">
+                          Physical handover of motorcycle in verified roadworthy condition with complete original documentation, keys, and signed RTO Forms 29 & 30.
+                        </div>
+                      </td>
+                      <td className="p-2.5 text-center font-mono">{formData.year}</td>
+                      <td className="p-2.5 text-center font-mono">{Number(formData.mileage || 0).toLocaleString('en-IN')} KM</td>
+                      <td className="p-2.5 text-right font-mono font-bold text-black">
+                        {formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Settlement and Checklist */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                <div className="bg-zinc-50 p-2 sm:p-2.5 rounded-lg border border-zinc-200 text-[10px] sm:text-[10.5px]">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+                    Settlement & Handover Checklist
+                  </div>
+                  <div className="space-y-1 mt-1 text-zinc-700">
+                    <div className="flex justify-between">
+                      <span>Payment Method:</span>
+                      <strong>{acquisitionData.paymentMethod}</strong>
+                    </div>
+                    {acquisitionData.paymentRef && (
+                      <div className="flex justify-between">
+                        <span>Transaction Ref / UTR:</span>
+                        <strong className="font-mono">{acquisitionData.paymentRef}</strong>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-1 pt-1.5 border-t border-dashed border-zinc-200 text-[9.5px]">
+                      <div>{acquisitionData.originalRcReceived !== false ? '☑' : '☐'} Original RC Book</div>
+                      <div>{acquisitionData.rtoFormsSigned !== false ? '☑' : '☐'} Forms 29 & 30 Signed</div>
+                      <div>{acquisitionData.insuranceCopyReceived !== false ? '☑' : '☐'} Insurance Policy</div>
+                      <div>{acquisitionData.pucValid !== false ? '☑' : '☐'} Valid PUC</div>
+                    </div>
+                    <div className="pt-1.5 border-t border-dashed border-zinc-200 text-[9.5px] sm:text-[10px]">
+                      <span className="text-zinc-500">Amount in Words:</span><br />
+                      <strong className="text-black font-serif italic">
+                        {numberToWordsIndian(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
+                  <div className="flex justify-between text-zinc-600">
+                    <span>Agreed Purchase Price:</span>
+                    <span>{formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
+                    <span>Total Net Disbursed:</span>
+                    <span>{formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
+                    <span>Seller Balance Due:</span>
+                    <span>NIL (Fully Settled)</span>
+                  </div>
+                  <div className="text-[9px] text-zinc-500 pt-1 font-sans">
+                    Status: <strong className="text-emerald-700">{acquisitionData.paymentStatus || 'Paid in Full'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legal Seller Undertaking */}
+              <div className="border-t border-zinc-200 pt-2 text-[8.5px] sm:text-[9px] text-zinc-500 leading-relaxed">
+                <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We ({acquisitionData.sellerName || 'The Seller'}) hereby confirm having sold and delivered physical possession of the motorcycle to Patel Motors. I solemnly affirm that I am the registered lawful owner, that the vehicle has a clear title with no pending police complaints, e-challans, or undisclosed finance liens. I have received the full agreed purchase price of {formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}. From this handover date and time, Patel Motors assumes physical custody of the motorcycle.
+              </div>
+
+              {/* Dual Signatures */}
+              <div className="border-t border-dashed border-zinc-300 pt-2.5 mt-2.5 flex justify-between items-end text-[9px] sm:text-[10px] text-zinc-500">
+                <div className="text-center w-28 sm:w-36">
+                  <div className="w-full border-b border-zinc-400 mb-1"></div>
+                  <div className="font-bold text-black uppercase">Seller Signature</div>
+                  <div className="text-[8.5px] sm:text-[9px] truncate">{acquisitionData.sellerName || 'Seller (Previous Owner)'}</div>
+                </div>
+                <div className="text-center w-28 sm:w-36">
+                  <div className="w-full border-b border-zinc-400 mb-1"></div>
+                  <div className="font-bold text-black uppercase">For PATEL MOTORS</div>
+                  <div className="text-[8.5px] sm:text-[9px]">Authorized Signatory</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

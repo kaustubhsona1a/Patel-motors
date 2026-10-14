@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useVehicles, sanitizeHeroImage, sanitizeHeroMobileImage, PATEL_HERO_DESKTOP, PATEL_HERO_MOBILE } from '../../context/VehicleContext';
-import { UploadCloud, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, AlertCircle, RefreshCw, CheckCircle2, Cloud, Database } from 'lucide-react';
+import { UploadCloud, Trash2, Plus, Image as ImageIcon, Link as LinkIcon, AlertCircle, RefreshCw, CheckCircle2, Cloud, Database, FileCode, Copy, Check, X } from 'lucide-react';
 import { uploadImageToStorage, cleanupLegacyImageVariants, supabase } from '../../lib/supabase';
 import { SmartImage } from '../../components/SmartImage';
+import { SUPABASE_SETUP_SQL, DELIVERY_NOTE_MIGRATION_SQL } from '../../data/supabaseSql';
 
 export default function AdminSettings() {
   const { siteConfig, updateSiteConfig, refreshInventory } = useVehicles();
@@ -10,6 +11,16 @@ export default function AdminSettings() {
   const [errorText, setErrorText] = useState('');
   const [isCompressing, setIsCompressing] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [activeSqlTab, setActiveSqlTab] = useState<'delivery_note' | 'full_schema'>('delivery_note');
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  const handleCopySql = () => {
+    const textToCopy = activeSqlTab === 'delivery_note' ? DELIVERY_NOTE_MIGRATION_SQL : SUPABASE_SETUP_SQL;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 2500);
+  };
 
   const [supabaseStatus, setSupabaseStatus] = useState<'checking' | 'connected' | 'not_configured' | 'error'>('checking');
 
@@ -275,6 +286,14 @@ export default function AdminSettings() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setShowSqlModal(true)}
+              className="px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+            >
+              <FileCode className="w-3.5 h-3.5" />
+              <span>SQL Scripts (Delivery Note)</span>
+            </button>
             <button
               type="button"
               onClick={checkConnection}
@@ -693,6 +712,110 @@ export default function AdminSettings() {
       </div>
 
       {/* Supabase SQL Setup Script Modal */}
+      {showSqlModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-zinc-950 border border-white/10 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-zinc-900/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
+                  <FileCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-serif font-bold text-white uppercase tracking-wider">
+                    Supabase SQL Schema & Migration Scripts
+                  </h3>
+                  <p className="text-[11px] text-zinc-400 font-mono">
+                    Copy and run directly in your Supabase SQL Editor
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowSqlModal(false)}
+                className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-white/10 bg-black/40 px-5 pt-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveSqlTab('delivery_note')}
+                className={`pb-3 text-xs font-mono font-bold tracking-wider uppercase transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+                  activeSqlTab === 'delivery_note'
+                    ? 'border-orange-500 text-orange-400'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <span>1. Delivery Note Migration</span>
+                <span className="text-[9px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded font-bold">Recommended</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSqlTab('full_schema')}
+                className={`pb-3 text-xs font-mono font-bold tracking-wider uppercase transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+                  activeSqlTab === 'full_schema'
+                    ? 'border-orange-500 text-orange-400'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <span>2. Full Database Schema (All Tables)</span>
+              </button>
+            </div>
+
+            {/* Description bar */}
+            <div className="px-5 py-3 bg-zinc-900/30 border-b border-white/5 flex items-center justify-between text-xs font-mono">
+              <span className="text-zinc-400 text-[11px]">
+                {activeSqlTab === 'delivery_note'
+                  ? 'Adds acquisition_info column to vehicles table & creates delivery_notes table, indexes, and RLS policies.'
+                  : 'Master script creating all tables, storage buckets (vehicle-images, site_settings), indexes, and RLS.'}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopySql}
+                className="px-3.5 py-1.5 bg-white text-zinc-950 hover:bg-zinc-200 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-md shrink-0 active:scale-95 cursor-pointer ml-3"
+              >
+                {copiedSql ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy SQL</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Code Content */}
+            <div className="flex-1 overflow-y-auto p-5 bg-black/60 font-mono text-[11px] leading-relaxed text-zinc-300">
+              <pre className="whitespace-pre overflow-x-auto selection:bg-orange-500/30">
+                {activeSqlTab === 'delivery_note' ? DELIVERY_NOTE_MIGRATION_SQL : SUPABASE_SETUP_SQL}
+              </pre>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-white/10 bg-zinc-900/40 flex items-center justify-between text-xs font-mono text-zinc-400">
+              <div className="flex items-center gap-2 text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Safe to run multiple times (idempotent IF NOT EXISTS)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSqlModal(false)}
+                className="px-4 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded-lg text-xs font-mono transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Vehicle, SaleRecord, formatPrice } from '../data/mockData';
+import { Vehicle, SaleRecord, AcquisitionRecord, formatPrice } from '../data/mockData';
 
 export interface DealershipInfo {
   name: string;
@@ -713,3 +713,536 @@ export function printInvoice(bike: Vehicle, sale: SaleRecord): void {
     console.error('Invoice printing failed:', err);
   }
 }
+
+export function generateDeliveryNoteNumber(bike?: Partial<Vehicle>): string {
+  const currentYear = new Date().getFullYear();
+  const nextYearShort = String(currentYear + 1).slice(-2);
+  const finYear = `${currentYear}-${nextYearShort}`;
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const bikePrefix = bike?.make ? bike.make.substring(0, 3).toUpperCase() : 'MOT';
+  return `PM/DN/${finYear}/${bikePrefix}-${randomSuffix}`;
+}
+
+export function generateDeliveryNoteHtml(
+  bike: Partial<Vehicle>, 
+  acquisition: AcquisitionRecord, 
+  dealership: DealershipInfo = PATEL_MOTORS_DEALERSHIP
+): string {
+  const purchasePriceFormatted = formatPrice(acquisition.purchaseAmount);
+  const amountWords = numberToWordsIndian(acquisition.purchaseAmount);
+  const deliveryTime = acquisition.handoverTime || '11:00 AM IST';
+  const deliveryDate = acquisition.acquisitionDate || new Date().toISOString().split('T')[0];
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vehicle Acquisition & Delivery Note #${acquisition.deliveryNoteNumber} - ${dealership.name}</title>
+  <style>
+    @page { 
+      size: A4 portrait; 
+      margin: 10mm; 
+    }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #0f172a;
+      margin: 0;
+      padding: 16px;
+      font-size: 11px;
+      line-height: 1.4;
+      background: #f8fafc;
+    }
+    .invoice-wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      padding: 24px 28px;
+      border-radius: 4px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    /* Header */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+    }
+    .brand-section {
+      flex: 1;
+    }
+    .brand-name {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #09090b;
+      margin: 0;
+      line-height: 1;
+    }
+    .brand-sub {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #ea580c;
+      margin-top: 4px;
+    }
+    .brand-info {
+      font-size: 10px;
+      color: #334155;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+    .invoice-header-meta {
+      text-align: right;
+      min-width: 220px;
+    }
+    .doc-badge {
+      display: inline-block;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 2px;
+      margin-bottom: 6px;
+    }
+    .invoice-no {
+      font-size: 13px;
+      font-weight: 800;
+      color: #09090b;
+      font-family: monospace;
+    }
+    .meta-line {
+      font-size: 10.5px;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .meta-line strong {
+      color: #09090b;
+    }
+    .status-pill {
+      display: inline-block;
+      font-weight: 800;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      margin-top: 4px;
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    /* 2 Columns: Seller & Bike */
+    .party-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .info-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+    .info-title {
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #64748b;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      font-family: monospace;
+    }
+    .info-content {
+      font-size: 10.5px;
+      line-height: 1.45;
+      color: #1e293b;
+    }
+    .spec-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px 8px;
+      margin-top: 4px;
+      font-family: monospace;
+      font-size: 10px;
+    }
+
+    /* Table */
+    .line-items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 14px;
+    }
+    .line-items th {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 8px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: left;
+    }
+    .line-items th.right, .line-items td.right {
+      text-align: right;
+    }
+    .line-items th.center, .line-items td.center {
+      text-align: center;
+    }
+    .line-items td {
+      padding: 10px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+      font-size: 11px;
+    }
+    .item-name {
+      font-weight: 800;
+      color: #09090b;
+      font-size: 11.5px;
+    }
+    .item-desc {
+      font-size: 9.5px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* Settlement Summary */
+    .settlement-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .payment-details {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 10.5px;
+    }
+    .amount-words-box {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed #cbd5e1;
+      font-size: 9.5px;
+      color: #475569;
+    }
+    .amount-words-val {
+      font-weight: 800;
+      font-style: italic;
+      color: #09090b;
+      margin-top: 2px;
+    }
+
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+      margin-top: 6px;
+      font-size: 10px;
+      color: #334155;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .totals-box {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2.5px 0;
+      color: #475569;
+    }
+    .total-row.highlight {
+      border-top: 2px solid #0f172a;
+      margin-top: 6px;
+      padding-top: 6px;
+      font-weight: 900;
+      font-size: 13px;
+      color: #09090b;
+    }
+    .total-row.settled {
+      color: #15803d;
+      font-weight: 800;
+      font-size: 11px;
+      border-bottom: 1px dashed #e2e8f0;
+      padding-bottom: 4px;
+    }
+
+    /* Terms & Undertaking */
+    .terms-box {
+      border-top: 1px solid #cbd5e1;
+      padding-top: 8px;
+      margin-top: 10px;
+      font-size: 8.5px;
+      color: #475569;
+      line-height: 1.45;
+    }
+    .terms-box strong {
+      color: #09090b;
+    }
+
+    /* Dual Signatures */
+    .signatures-section {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px dashed #cbd5e1;
+    }
+    .sig-col {
+      width: 200px;
+      text-align: center;
+    }
+    .sig-line {
+      width: 100%;
+      height: 1px;
+      background: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .sig-title {
+      font-weight: 800;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #09090b;
+    }
+    .sig-sub {
+      font-size: 8.5px;
+      color: #64748b;
+      margin-top: 1px;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .invoice-wrapper {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-wrapper">
+    <!-- Header -->
+    <div class="top-bar">
+      <div class="brand-section">
+        <h1 class="brand-name">${dealership.name}</h1>
+        <div class="brand-sub">Two-Wheeler Acquisition & Delivery Challan</div>
+        <div class="brand-info">
+          ${dealership.address}, ${dealership.city} - ${dealership.pinCode}<br />
+          Phone: ${dealership.phone} | Email: ${dealership.email}<br />
+          GSTIN: <strong>${dealership.gstin}</strong> | PAN: <strong>${dealership.pan}</strong> | State: <strong>${dealership.stateCode}</strong>
+        </div>
+      </div>
+      <div class="invoice-header-meta">
+        <div class="doc-badge">Vehicle Delivery Note & Undertaking</div>
+        <div class="invoice-no">#${acquisition.deliveryNoteNumber}</div>
+        <div class="meta-line">Date of Handover: <strong>${deliveryDate}</strong></div>
+        <div class="meta-line">Time of Handover: <strong>${deliveryTime}</strong></div>
+        <div class="status-pill">${acquisition.paymentStatus || 'Disbursed / Settled'}</div>
+      </div>
+    </div>
+
+    <!-- 2 Column Particulars -->
+    <div class="party-grid">
+      <div class="info-card">
+        <div class="info-title">1. Seller / Previous Owner Details (Purchased From)</div>
+        <div class="info-content">
+          <strong>${acquisition.sellerName}</strong><br />
+          Contact: <strong>${acquisition.sellerPhone}</strong><br />
+          ${acquisition.sellerEmail ? `Email: ${acquisition.sellerEmail}<br />` : ''}
+          ${acquisition.sellerAddress ? `Address: ${acquisition.sellerAddress}<br />` : 'Address: Mumbai, Maharashtra<br />'}
+          ${acquisition.sellerIdentity ? `Govt ID Proof: <strong>${acquisition.sellerIdentity}</strong><br />` : ''}
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-title">2. Motorcycle Handed Over & Verified Specs</div>
+        <div class="info-content">
+          <strong>${bike.year || ''} ${bike.make || ''} ${bike.model || ''} ${bike.variant ? `(${bike.variant})` : ''}</strong>
+          <div class="spec-table">
+            <div>Reg No: <strong>${bike.registration || 'N/A'}</strong></div>
+            <div>Odo: <strong>${Number(bike.mileage || 0).toLocaleString('en-IN')} KM</strong></div>
+            <div>Chassis: <span>${bike.chassisNumber || 'Verified'}</span></div>
+            <div>Engine: <span>${bike.engineNumber || 'Verified'}</span></div>
+            <div>Ownership: <span>${bike.ownership || '1st Owner'}</span></div>
+            <div>Fuel: <span>${bike.fuelType || 'Petrol'}</span></div>
+            <div>Keys Received: <strong>${acquisition.keysCount || 2} Keys</strong></div>
+            <div>RC Book: <strong>${acquisition.originalRcReceived !== false ? 'Original Received' : 'Pending'}</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Handover Line Items -->
+    <table class="line-items">
+      <thead>
+        <tr>
+          <th>Particulars / Motorcycle Acquired</th>
+          <th class="center">Mfg Year</th>
+          <th class="center">Odometer</th>
+          <th class="right">Agreed Purchase Consideration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="item-name">${bike.make || ''} ${bike.model || ''} ${bike.variant || ''}</div>
+            <div class="item-desc">
+              Physical handover of motorcycle in roadworthy condition with complete set of original documents, keys, and signed RTO transfer forms (Forms 29 & 30).
+            </div>
+          </td>
+          <td class="center" style="font-family: monospace;">${bike.year || ''}</td>
+          <td class="center" style="font-family: monospace;">${Number(bike.mileage || 0).toLocaleString('en-IN')} KM</td>
+          <td class="right" style="font-family: monospace; font-weight: 800; font-size: 12px;">${purchasePriceFormatted}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Settlement Details & Checklist -->
+    <div class="settlement-grid">
+      <div class="payment-details">
+        <div class="info-title">Settlement & Documentation Handover Checklist</div>
+        <div>Payment Mode: <strong>${acquisition.paymentMethod}</strong></div>
+        ${acquisition.paymentRef ? `<div>Ref / Cheque / UTR: <strong style="font-family: monospace;">${acquisition.paymentRef}</strong></div>` : ''}
+        
+        <div class="checklist-grid">
+          <div class="check-item">${acquisition.originalRcReceived !== false ? '☑' : '☐'} Original RC Book</div>
+          <div class="check-item">${acquisition.rtoFormsSigned !== false ? '☑' : '☐'} RTO Forms 29 & 30 Signed</div>
+          <div class="check-item">${acquisition.insuranceCopyReceived !== false ? '☑' : '☐'} Valid Insurance Policy</div>
+          <div class="check-item">${acquisition.pucValid !== false ? '☑' : '☐'} Valid PUC Certificate</div>
+          <div class="check-item">☑ ${acquisition.keysCount || 2} Original Sets of Keys</div>
+          <div class="check-item">☑ Clear Hypothecation / NOC</div>
+        </div>
+
+        <div class="amount-words-box">
+          Amount in Words:<br />
+          <div class="amount-words-val">${amountWords}</div>
+        </div>
+      </div>
+
+      <div class="totals-box">
+        <div class="total-row">
+          <span>Agreed Purchase Price:</span>
+          <span>${purchasePriceFormatted}</span>
+        </div>
+        <div class="total-row settled">
+          <span>Settlement Status:</span>
+          <span>${acquisition.paymentStatus || 'Paid in Full'}</span>
+        </div>
+        <div class="total-row highlight">
+          <span>Total Net Disbursed:</span>
+          <span>${purchasePriceFormatted}</span>
+        </div>
+        <div class="total-row" style="font-size: 9.5px; color: #15803d; margin-top: 4px;">
+          <span>Seller Balance Due:</span>
+          <span>NIL (Fully Settled)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legal Undertaking -->
+    <div class="terms-box">
+      <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We (${acquisition.sellerName}) hereby confirm having sold and delivered physical possession of the above motorcycle to Patel Motors. I solemnly affirm that I am the sole registered owner, that the vehicle has a clean title, and is completely free of any police seizure, criminal case, unpaid e-challans, or undisclosed finance liens. I have received the full agreed purchase price of ${purchasePriceFormatted}. From this handover date (${deliveryDate}) and time (${deliveryTime}), Patel Motors assumes physical custody of the motorcycle.
+    </div>
+
+    <!-- Dual Signatures -->
+    <div class="signatures-section">
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <div class="sig-title">Seller's Signature & Handover</div>
+        <div class="sig-sub">${acquisition.sellerName} (Previous Owner)</div>
+      </div>
+
+      <div class="sig-col">
+        <div style="font-size: 8px; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">Dealership Seal</div>
+        <div class="sig-line"></div>
+        <div class="sig-title">For PATEL MOTORS</div>
+        <div class="sig-sub">Authorized Signatory (Received By)</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+export function printDeliveryNote(bike: Partial<Vehicle>, acquisition: AcquisitionRecord): void {
+  const html = generateDeliveryNoteHtml(bike, acquisition);
+  
+  // Try popup window first if allowed
+  try {
+    const printWindow = window.open('', '_blank', 'width=950,height=800');
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 400);
+      return;
+    }
+  } catch (e) {
+    // Popup was blocked or restricted by iframe sandbox
+  }
+
+  // Robust iframe fallback that works cleanly inside sandboxed iframes
+  try {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    document.body.appendChild(iframe);
+    
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      iframe.contentWindow?.focus();
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (iframe.parentNode) {
+            document.body.removeChild(iframe);
+          }
+        }, 1500);
+      }, 400);
+    }
+  } catch (err) {
+    console.error('Delivery note printing failed:', err);
+  }
+}
+

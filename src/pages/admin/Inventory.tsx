@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { formatPrice, Vehicle, BIKE_TYPES, VehicleStatus, SaleRecord } from '../../data/mockData';
-import { Search, Plus, Edit, Trash2, AlertTriangle, FileText, CheckCircle2, Eye, EyeOff, Bookmark, Archive, Printer, X, DollarSign, Clock, ShieldCheck } from 'lucide-react';
+import { formatPrice, Vehicle, BIKE_TYPES, VehicleStatus, SaleRecord, AcquisitionRecord } from '../../data/mockData';
+import { Search, Plus, Edit, Trash2, AlertTriangle, FileText, CheckCircle2, Eye, EyeOff, Bookmark, Archive, Printer, X, DollarSign, Clock, ShieldCheck, FileCheck } from 'lucide-react';
 import { useVehicles } from '../../context/VehicleContext';
 import { SmartImage, VEHICLE_PLACEHOLDER_FALLBACK } from '../../components/SmartImage';
-import { generateInvoiceNumber, printInvoice, generateInvoiceHtml, numberToWordsIndian, PATEL_MOTORS_DEALERSHIP } from '../../lib/invoice';
+import { generateInvoiceNumber, printInvoice, generateInvoiceHtml, numberToWordsIndian, PATEL_MOTORS_DEALERSHIP, printDeliveryNote } from '../../lib/invoice';
 
 export default function AdminInventory() {
   const { vehicles, updateVehicle, removeVehicle } = useVehicles();
@@ -17,6 +17,7 @@ export default function AdminInventory() {
   const [bikeToDelete, setBikeToDelete] = useState<Vehicle | null>(null);
   const [bikeToSell, setBikeToSell] = useState<Vehicle | null>(null);
   const [previewInvoiceBike, setPreviewInvoiceBike] = useState<{ bike: Vehicle; sale: SaleRecord } | null>(null);
+  const [previewDeliveryNoteBike, setPreviewDeliveryNoteBike] = useState<{ bike: Vehicle; acquisition: AcquisitionRecord } | null>(null);
 
   // Sale form state for "Mark as Sold & Generate Invoice"
   const [saleFormData, setSaleFormData] = useState({
@@ -424,6 +425,19 @@ export default function AdminInventory() {
                           </button>
                         )}
 
+                        {/* Delivery Note Action if Acquired with Delivery Note */}
+                        {bike.acquisitionInfo && (
+                          <button
+                            onClick={() => setPreviewDeliveryNoteBike({ bike, acquisition: bike.acquisitionInfo! })}
+                            className="inline-flex items-center px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer"
+                            title="View / Print Inward Delivery Note (Dealer Confidential)"
+                          >
+                            <FileCheck className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                            <span>Delivery Note</span>
+                          </button>
+                        )}
+
+
                         {/* Quick Publish / Unpublish */}
                         <button
                           onClick={() => handleTogglePublish(bike)}
@@ -532,6 +546,17 @@ export default function AdminInventory() {
                     >
                       <FileText className="w-3 h-3" />
                       <span>Invoice</span>
+                    </button>
+                  )}
+
+                  {bike.acquisitionInfo && (
+                    <button
+                      onClick={() => setPreviewDeliveryNoteBike({ bike, acquisition: bike.acquisitionInfo! })}
+                      className="py-1 px-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 rounded-lg text-[9px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
+                      title="View Inward Delivery Note"
+                    >
+                      <FileCheck className="w-3 h-3 text-emerald-400" />
+                      <span>Delivery Note</span>
                     </button>
                   )}
 
@@ -1166,6 +1191,216 @@ export default function AdminInventory() {
                   <div className="w-full border-b border-zinc-400 mb-1"></div>
                   <div className="font-bold text-black uppercase">Purchaser Signature</div>
                   <div className="text-[8.5px] sm:text-[9px] truncate">{previewInvoiceBike.sale.customerName}</div>
+                </div>
+                <div className="text-center w-28 sm:w-36">
+                  <div className="w-full border-b border-zinc-400 mb-1"></div>
+                  <div className="font-bold text-black uppercase">For PATEL MOTORS</div>
+                  <div className="text-[8.5px] sm:text-[9px]">Authorized Signatory</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* DELIVERY NOTE PREVIEW & PRINT MODAL - Dealer Inward Challan */}
+      {previewDeliveryNoteBike && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto overflow-x-hidden p-1.5 sm:p-4 md:p-6 flex justify-center items-start sm:items-center">
+          <div 
+            onClick={() => setPreviewDeliveryNoteBike(null)} 
+            className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity" 
+          />
+          <div className="relative z-10 w-full max-w-4xl my-2 sm:my-8 bg-zinc-950 border border-white/20 rounded-xl sm:rounded-3xl p-2.5 sm:p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/10 mb-3 sm:mb-4">
+              <div>
+                <span className="text-[9px] sm:text-[9.5px] font-mono text-orange-400 uppercase tracking-widest font-bold block">
+                  Official Inward Purchase & Delivery Challan
+                </span>
+                <h3 className="text-sm sm:text-xl font-serif font-bold text-white uppercase tracking-wider mt-0.5 truncate max-w-[190px] sm:max-w-md">
+                  #{previewDeliveryNoteBike.acquisition.deliveryNoteNumber}
+                </h3>
+              </div>
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  onClick={() => printDeliveryNote(previewDeliveryNoteBike.bike, previewDeliveryNoteBike.acquisition)}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-zinc-950 hover:bg-zinc-200 rounded-lg sm:rounded-xl text-[10.5px] sm:text-xs font-mono uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print / PDF</span>
+                </button>
+                <button 
+                  onClick={() => setPreviewDeliveryNoteBike(null)} 
+                  className="p-1.5 sm:p-2 text-zinc-400 hover:text-white bg-zinc-900 rounded-full border border-white/10 cursor-pointer"
+                  aria-label="Close delivery note"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Embedded Delivery Note Render */}
+            <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
+                <div>
+                  <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
+                  <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
+                    Two-Wheeler Acquisition & Delivery Challan
+                  </div>
+                  <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
+                    Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
+                    Phone: +91 84520 88500 | Email: sales@patelmotors.in<br />
+                    GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                  </div>
+                </div>
+                <div className="text-left sm:text-right font-mono shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-zinc-200">
+                  <div className="inline-block bg-black text-white text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1">
+                    Vehicle Delivery Note & Undertaking
+                  </div>
+                  <div className="font-bold text-xs sm:text-sm text-black">#{previewDeliveryNoteBike.acquisition.deliveryNoteNumber}</div>
+                  <div className="text-zinc-600 text-[9.5px] sm:text-[11px] mt-0.5">Date: {previewDeliveryNoteBike.acquisition.acquisitionDate}</div>
+                  <div className="text-zinc-600 text-[9.5px] sm:text-[11px]">Time: {previewDeliveryNoteBike.acquisition.handoverTime || '11:30 AM IST'}</div>
+                  <div className="font-bold text-[9.5px] sm:text-[11px] mt-0.5 text-emerald-700">
+                    Status: {previewDeliveryNoteBike.acquisition.paymentStatus || 'Paid in Full'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Two columns: Seller & Motorcycle Particulars */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                <div className="bg-zinc-50 p-2.5 sm:p-3 rounded-lg border border-zinc-200">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+                    1. Seller / Previous Owner Details (Purchased From)
+                  </div>
+                  <div className="font-bold text-xs sm:text-sm text-black">{previewDeliveryNoteBike.acquisition.sellerName}</div>
+                  <div className="text-[10px] sm:text-[10.5px] text-zinc-700 mt-0.5">Phone: <strong>{previewDeliveryNoteBike.acquisition.sellerPhone}</strong></div>
+                  {previewDeliveryNoteBike.acquisition.sellerEmail && (
+                    <div className="text-[9.5px] text-zinc-700">Email: {previewDeliveryNoteBike.acquisition.sellerEmail}</div>
+                  )}
+                  {previewDeliveryNoteBike.acquisition.sellerAddress && (
+                    <div className="text-[9.5px] text-zinc-700">Address: {previewDeliveryNoteBike.acquisition.sellerAddress}</div>
+                  )}
+                  {previewDeliveryNoteBike.acquisition.sellerIdentity && (
+                    <div className="text-[9.5px] text-zinc-700 font-mono mt-0.5">
+                      ID Proof: <strong>{previewDeliveryNoteBike.acquisition.sellerIdentity}</strong>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-zinc-50 p-2.5 sm:p-3 rounded-lg border border-zinc-200">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+                    2. Motorcycle Particulars & Physical Condition
+                  </div>
+                  <div className="font-bold text-xs sm:text-sm text-black">
+                    {previewDeliveryNoteBike.bike.year} {previewDeliveryNoteBike.bike.make} {previewDeliveryNoteBike.bike.model} {previewDeliveryNoteBike.bike.variant ? `(${previewDeliveryNoteBike.bike.variant})` : ''}
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9.5px] sm:text-[10px] text-zinc-700 mt-1 font-mono">
+                    <div>Reg: <strong className="text-black">{previewDeliveryNoteBike.bike.registration || 'N/A'}</strong></div>
+                    <div>Odo: <strong className="text-black">{previewDeliveryNoteBike.bike.mileage.toLocaleString('en-IN')} KM</strong></div>
+                    <div>Chassis: <span className="text-zinc-800">{previewDeliveryNoteBike.bike.chassisNumber || 'Verified'}</span></div>
+                    <div>Engine: <span className="text-zinc-800">{previewDeliveryNoteBike.bike.engineNumber || 'Verified'}</span></div>
+                    <div>Owner: <span className="text-zinc-800">{previewDeliveryNoteBike.bike.ownership || '1st Owner'}</span></div>
+                    <div>Fuel: <span className="text-zinc-800">{previewDeliveryNoteBike.bike.fuelType || 'Petrol'}</span></div>
+                    <div>Keys: <strong className="text-black">{previewDeliveryNoteBike.acquisition.keysCount || 2} Original Keys</strong></div>
+                    <div>RC: <strong className="text-black">{previewDeliveryNoteBike.acquisition.originalRcReceived !== false ? 'Original Submitted' : 'Pending'}</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Line items table */}
+              <div className="border border-zinc-200 rounded-lg overflow-hidden mb-3 sm:mb-4">
+                <table className="w-full text-left">
+                  <thead className="bg-zinc-900 text-white text-[9.5px] uppercase font-mono font-bold tracking-wider">
+                    <tr>
+                      <th className="p-2 sm:p-2.5">Particulars / Motorcycle Acquired</th>
+                      <th className="p-2 sm:p-2.5 text-center">Year</th>
+                      <th className="p-2 sm:p-2.5 text-center">Odometer</th>
+                      <th className="p-2 sm:p-2.5 text-right">Agreed Purchase Consideration</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200 font-sans text-[11px]">
+                    <tr>
+                      <td className="p-2.5">
+                        <strong className="text-black text-xs">
+                          {previewDeliveryNoteBike.bike.make} {previewDeliveryNoteBike.bike.model} {previewDeliveryNoteBike.bike.variant || ''}
+                        </strong>
+                        <div className="text-[9.5px] text-zinc-500 mt-0.5">
+                          Physical handover of motorcycle in verified roadworthy condition with complete original documentation, keys, and signed RTO Forms 29 & 30.
+                        </div>
+                      </td>
+                      <td className="p-2.5 text-center font-mono">{previewDeliveryNoteBike.bike.year}</td>
+                      <td className="p-2.5 text-center font-mono">{previewDeliveryNoteBike.bike.mileage.toLocaleString('en-IN')} KM</td>
+                      <td className="p-2.5 text-right font-mono font-bold text-black">
+                        {formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Settlement and Checklist */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                <div className="bg-zinc-50 p-2 sm:p-2.5 rounded-lg border border-zinc-200 text-[10px] sm:text-[10.5px]">
+                  <div className="text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider font-mono text-zinc-500 mb-1 border-b border-zinc-200 pb-0.5">
+                    Settlement & Documentation Handover Checklist
+                  </div>
+                  <div className="space-y-1 mt-1 text-zinc-700">
+                    <div className="flex justify-between">
+                      <span>Payment Method:</span>
+                      <strong>{previewDeliveryNoteBike.acquisition.paymentMethod}</strong>
+                    </div>
+                    {previewDeliveryNoteBike.acquisition.paymentRef && (
+                      <div className="flex justify-between">
+                        <span>Transaction Ref / UTR:</span>
+                        <strong className="font-mono">{previewDeliveryNoteBike.acquisition.paymentRef}</strong>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-1 pt-1.5 border-t border-dashed border-zinc-200 text-[9.5px]">
+                      <div>{previewDeliveryNoteBike.acquisition.originalRcReceived !== false ? '☑' : '☐'} Original RC Book</div>
+                      <div>{previewDeliveryNoteBike.acquisition.rtoFormsSigned !== false ? '☑' : '☐'} Forms 29 & 30 Signed</div>
+                      <div>{previewDeliveryNoteBike.acquisition.insuranceCopyReceived !== false ? '☑' : '☐'} Insurance Policy</div>
+                      <div>{previewDeliveryNoteBike.acquisition.pucValid !== false ? '☑' : '☐'} Valid PUC</div>
+                    </div>
+                    <div className="pt-1.5 border-t border-dashed border-zinc-200 text-[9.5px] sm:text-[10px]">
+                      <span className="text-zinc-500">Amount in Words:</span><br />
+                      <strong className="text-black font-serif italic">
+                        {numberToWordsIndian(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
+                  <div className="flex justify-between text-zinc-600">
+                    <span>Agreed Purchase Consideration:</span>
+                    <span>{formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
+                    <span>Total Net Disbursed:</span>
+                    <span>{formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
+                    <span>Seller Balance Due:</span>
+                    <span>NIL (Fully Settled)</span>
+                  </div>
+                  <div className="text-[9px] text-zinc-500 pt-1 font-sans">
+                    Status: <strong className="text-emerald-700">{previewDeliveryNoteBike.acquisition.paymentStatus || 'Paid in Full'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legal Seller Undertaking */}
+              <div className="border-t border-zinc-200 pt-2 text-[8.5px] sm:text-[9px] text-zinc-500 leading-relaxed">
+                <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We ({previewDeliveryNoteBike.acquisition.sellerName}) hereby confirm having sold and delivered physical possession of the motorcycle to Patel Motors. I solemnly affirm that I am the registered lawful owner, that the vehicle has a clear title with no pending police complaints, e-challans, or undisclosed finance liens. I have received the full agreed purchase price of {formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}. From this handover date and time, Patel Motors assumes physical custody of the motorcycle.
+              </div>
+
+              {/* Dual Signatures */}
+              <div className="border-t border-dashed border-zinc-300 pt-2.5 mt-2.5 flex justify-between items-end text-[9px] sm:text-[10px] text-zinc-500">
+                <div className="text-center w-28 sm:w-36">
+                  <div className="w-full border-b border-zinc-400 mb-1"></div>
+                  <div className="font-bold text-black uppercase">Seller Signature</div>
+                  <div className="text-[8.5px] sm:text-[9px] truncate">{previewDeliveryNoteBike.acquisition.sellerName}</div>
                 </div>
                 <div className="text-center w-28 sm:w-36">
                   <div className="w-full border-b border-zinc-400 mb-1"></div>

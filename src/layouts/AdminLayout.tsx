@@ -8,7 +8,7 @@ import { SmartImage } from '../components/SmartImage';
 
 export default function AdminLayout() {
   const location = useLocation();
-  const { isAdmin, logout, user, loading: authLoading, loginAsDealer } = useAuth();
+  const { isAdmin, logout, user, loading: authLoading } = useAuth();
   const { siteConfig, metrics } = useVehicles();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -141,15 +141,6 @@ export default function AdminLayout() {
               {loading ? 'Authenticating with Supabase...' : 'Sign In to Dealer Portal'}
             </button>
 
-            <div className="pt-2 text-center">
-              <button 
-                type="button" 
-                onClick={() => loginAsDealer()}
-                className="w-full py-2.5 px-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-xl text-[10px] font-mono uppercase font-bold tracking-wider transition-all border border-white/10"
-              >
-                Quick Demo Access (Preview Mode)
-              </button>
-            </div>
           </form>
 
           <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center text-[10px] tracking-widest uppercase font-semibold font-mono text-zinc-500">

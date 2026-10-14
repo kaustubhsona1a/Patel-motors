@@ -31,6 +31,28 @@ export interface SaleRecord {
   notes?: string;
 }
 
+export interface AcquisitionRecord {
+  deliveryNoteNumber: string; // e.g. "PM/DN/2026-27/KAW-4921"
+  acquisitionDate: string; // YYYY-MM-DD
+  handoverTime?: string; // e.g. "11:30 AM IST"
+  sellerName: string; // Name of person / customer purchased from
+  sellerPhone: string; // Phone of person purchased from
+  sellerEmail?: string;
+  sellerAddress?: string; // Residential address
+  sellerIdentity?: string; // Aadhaar / PAN / Driving License ID
+  purchaseAmount: number; // Agreed acquisition price in INR
+  paymentMethod: 'Bank Transfer (NEFT/RTGS)' | 'UPI' | 'Cheque' | 'Cash' | 'Card' | string;
+  paymentStatus: 'Paid in Full' | 'Token / Advance' | 'Pending' | string;
+  paymentRef?: string; // UTR / Cheque No / Transaction Ref
+  originalRcReceived?: boolean;
+  insuranceCopyReceived?: boolean;
+  rtoFormsSigned?: boolean; // Forms 29 & 30
+  pucValid?: boolean;
+  keysCount?: number; // e.g. 2 Keys
+  notes?: string;
+  generatedAt?: string;
+}
+
 export type Vehicle = {
   id: string;
   make: string; // Brand e.g. Kawasaki, Royal Enfield, BMW, Triumph
@@ -65,6 +87,7 @@ export type Vehicle = {
   inspectionNotes?: string;
   updatedAt?: number;
   deleted?: boolean;
+  acquisitionInfo?: AcquisitionRecord; // Dealer private inward purchase delivery note record
   saleInfo?: SaleRecord;
 };
 

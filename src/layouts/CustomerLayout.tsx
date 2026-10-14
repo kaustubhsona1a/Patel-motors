@@ -2,7 +2,6 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { MapPin, Phone, Mail, Clock, MessageCircle, Instagram, Twitter, Menu, X, Star, Upload, Image, Check, ChevronRight, Bike } from 'lucide-react';
 import React, { useState } from 'react';
 import { useVehicles, sanitizeHeroImage, sanitizeHeroMobileImage, PATEL_HERO_DESKTOP, PATEL_HERO_MOBILE, FALLBACK_HERO_DESKTOP, FALLBACK_HERO_MOBILE } from '../context/VehicleContext';
-import { useAuth } from '../context/AuthContext';
 import { SmartImage } from '../components/SmartImage';
 
 let globalVideoFinished = false;
@@ -14,7 +13,6 @@ export default function CustomerLayout() {
   const navigate = useNavigate();
   
   const { siteConfig } = useVehicles();
-  const { loginAsDealer } = useAuth();
   const isHomePage = location.pathname === '/';
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollY, setScrollY] = useState(0);
