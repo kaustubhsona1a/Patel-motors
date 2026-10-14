@@ -39,6 +39,8 @@ export interface SiteConfig {
   homeHeroType?: 'video' | 'image';
   logo: string;
   whatsappNumber?: string;
+  sellWhatsappNumber?: string;
+  buyWhatsappNumber?: string;
   clientDeliveries?: string[];
   instagramReels?: string[];
 }
@@ -83,7 +85,9 @@ const DEFAULT_CONFIG: SiteConfig = {
   homeHeroMobileVideo: '',
   homeHeroType: 'image',
   logo: '/logo.svg',
-  whatsappNumber: '918452088500',
+  whatsappNumber: '919819655210',
+  buyWhatsappNumber: '919819655210',
+  sellWhatsappNumber: '919320556671',
   clientDeliveries: [],
   instagramReels: []
 };

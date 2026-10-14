@@ -3,7 +3,11 @@
  * Handles phone number normalization, message formatting, and WhatsApp forwarding.
  */
 
-export const DEFAULT_DEALER_WHATSAPP = '918822225224';
+export const SELL_BIKES_PHONE = '919320556671';
+export const BUY_BIKES_PHONE = '919819655210';
+export const SELL_BIKES_FORMATTED = '+91 93205 56671';
+export const BUY_BIKES_FORMATTED = '+91 98196 55210';
+export const DEFAULT_DEALER_WHATSAPP = BUY_BIKES_PHONE;
 
 /**
  * Normalizes any phone number into an international E.164-compatible format for wa.me links
@@ -22,7 +26,7 @@ export function sanitizeWhatsAppNumber(phone: string | undefined | null): string
     return '91' + digits;
   }
 
-  // 11 digits starting with 0 (e.g. 08822225224)
+  // 11 digits starting with 0 (e.g. 09820155443)
   if (digits.length === 11 && digits.startsWith('0')) {
     return '91' + digits.substring(1);
   }
@@ -53,8 +57,8 @@ export interface BikeSellDetails {
  */
 export function formatBikeSellWhatsAppMessage(data: BikeSellDetails): string {
   const lines = [
-    `*🏍️ Bike for Sale - Valuation Request*`,
-    `*Patel Motors Mumbai*`,
+    `*Bike for Sale - Valuation Request*`,
+    `Patel Motors Mumbai`,
     ``,
     `*Bike:* ${data.make.trim()} ${data.model.trim()} (${data.year})`,
     `*Kilometers:* ${Number(data.mileage || 0).toLocaleString('en-IN')} KM`,
@@ -62,89 +66,18 @@ export function formatBikeSellWhatsAppMessage(data: BikeSellDetails): string {
     data.expectedPrice ? `*Expected Price:* ₹${Number(data.expectedPrice).toLocaleString('en-IN')}` : null,
     data.notes ? `*Notes:* ${data.notes.trim()}` : null,
     ``,
-    `*👤 Seller Contact:*`,
+    `*Seller Contact:*`,
     `• Name: ${data.name.trim()}`,
-    `• Phone: ${data.phone.trim()}`,
-    ``,
-    `_Sent via Patel Motors Website Valuation_`
+    `• Phone: ${data.phone.trim()}`
   ];
 
   if (data.images && data.images.length > 0) {
     lines.push(``);
-    lines.push(`*📸 Photos Attached (${data.images.length}):*`);
+    lines.push(`*Photos (${data.images.length}):*`);
     data.images.slice(0, 3).forEach((img, i) => {
       lines.push(`${i + 1}. ${img}`);
     });
   }
-
-  return lines.filter(line => line !== null).join('\n');
-}
-
-export interface ClientRequirementDetails {
-  name: string;
-  phone: string;
-  bikeInterest?: string;
-  budget?: string | number;
-  notes?: string;
-  type?: 'Requirement' | 'Test Ride' | 'Inquiry' | 'Exchange';
-}
-
-/**
- * Compiles a concise, formatted WhatsApp message for new client requirements and vehicle inquiries
- */
-export function formatClientRequirementWhatsAppMessage(data: ClientRequirementDetails): string {
-  const header = data.type ? `*📋 New ${data.type} Request*` : `*📋 New Client Requirement*`;
-  const lines = [
-    header,
-    `*Patel Motors Mumbai*`,
-    ``,
-    `*👤 Client Details:*`,
-    `• Name: ${data.name.trim()}`,
-    `• Phone / WhatsApp: ${data.phone.trim()}`,
-    ``,
-    `*🎯 Motorcycle Details:*`,
-    `• Looking For: ${data.bikeInterest?.trim() || 'Pre-Owned Motorcycle'}`,
-    data.budget ? `• Target Budget: ₹${Number(data.budget).toLocaleString('en-IN')}` : null,
-    data.notes ? `• Requirement Notes: ${data.notes.trim()}` : null,
-    ``,
-    `_Sent via Patel Motors Website_`
-  ];
-
-  return lines.filter(line => line !== null).join('\n');
-}
-
-/**
- * Compiles a concise WhatsApp message when a customer inquires about a specific motorcycle listing
- */
-export function formatVehicleInquiryWhatsAppMessage(bike: {
-  make: string;
-  model: string;
-  year: number | string;
-  variant?: string;
-  price: number | string;
-  mileage?: number | string;
-}, inquiryType: 'general' | 'photos' | 'test_ride' = 'general'): string {
-  let title = '*🏍️ Motorcycle Inquiry*';
-  if (inquiryType === 'photos') title = '*📸 Request for Additional Photos*';
-  if (inquiryType === 'test_ride') title = '*⚡ Test Ride Booking Request*';
-
-  const lines = [
-    title,
-    `*Patel Motors Mumbai*`,
-    ``,
-    `Hi Patel Motors, I am interested in this motorcycle:`,
-    `• *Bike:* ${bike.year} ${bike.make} ${bike.model} ${bike.variant ? `(${bike.variant})` : ''}`,
-    `• *Price:* ₹${Number(bike.price).toLocaleString('en-IN')}`,
-    bike.mileage ? `• *Kilometers:* ${Number(bike.mileage).toLocaleString('en-IN')} KM` : null,
-    ``,
-    inquiryType === 'photos'
-      ? `Please share more detailed photos and walkaround video of this motorcycle.`
-      : inquiryType === 'test_ride'
-      ? `I would like to schedule a visit to the Dadar showroom for a test ride and inspection.`
-      : `Please share availability, paperwork status, and best valuation deal for this bike.`,
-    ``,
-    `_Listing URL: ${typeof window !== 'undefined' ? window.location.href : 'Patel Motors'}_`
-  ];
 
   return lines.filter(line => line !== null).join('\n');
 }
@@ -181,5 +114,5 @@ export function forwardToWhatsApp(targetPhone: string, text: string): boolean {
  */
 export function formatDealerFollowUpMessage(leadName: string, vehicleInfo: string): string {
   const shortInfo = vehicleInfo.split('\n')[0];
-  return `Hi ${leadName.trim()}, regarding your ${shortInfo} submitted to Patel Motors. We have reviewed your details and would like to connect on WhatsApp.`;
+  return `Hi ${leadName.trim()}, regarding your ${shortInfo} submitted to Patel Motors. We have reviewed your details and would like to share our valuation offer.`;
 }

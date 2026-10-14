@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, Clock, MessageCircle, Instagram, Twitter, Menu, X,
 import React, { useState } from 'react';
 import { useVehicles, sanitizeHeroImage, sanitizeHeroMobileImage, PATEL_HERO_DESKTOP, PATEL_HERO_MOBILE, FALLBACK_HERO_DESKTOP, FALLBACK_HERO_MOBILE } from '../context/VehicleContext';
 import { SmartImage } from '../components/SmartImage';
+import { BUY_BIKES_PHONE, SELL_BIKES_PHONE, BUY_BIKES_FORMATTED, SELL_BIKES_FORMATTED } from '../lib/whatsapp';
 
 let globalVideoFinished = false;
 
@@ -13,6 +14,10 @@ export default function CustomerLayout() {
   const navigate = useNavigate();
   
   const { siteConfig } = useVehicles();
+  const buyPhone = siteConfig?.buyWhatsappNumber || siteConfig?.whatsappNumber || BUY_BIKES_PHONE;
+  const buyPhoneDisplay = buyPhone.endsWith('9819655210') ? BUY_BIKES_FORMATTED : `+${buyPhone}`;
+  const sellPhone = siteConfig?.sellWhatsappNumber || SELL_BIKES_PHONE;
+  const sellPhoneDisplay = sellPhone.endsWith('9320556671') ? SELL_BIKES_FORMATTED : `+${sellPhone}`;
   const isHomePage = location.pathname === '/';
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -259,23 +264,23 @@ export default function CustomerLayout() {
             <div className="hidden lg:flex items-center space-x-2.5 xl:space-x-3 shrink-0">
               {/* Full phone pill on xl screens, icon on lg screens to avoid iPad overflow */}
               <a 
-                href="tel:+918452088500" 
+                href={`tel:+${buyPhone}`} 
                 className="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-full frost-pill hover:border-white/40 text-xs font-sans whitespace-nowrap group transition-all shrink-0"
-                title="Call Patel Motors: +91 84520 88500"
+                title={`Call Patel Motors (Buy Bikes): ${buyPhoneDisplay}`}
               >
                 <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-orange-400 group-hover:text-white transition-colors">
                   <Phone className="w-3 h-3 stroke-[2]" />
                 </div>
                 <span className="text-zinc-200 group-hover:text-white font-medium tracking-wide text-[12px] font-sans whitespace-nowrap">
-                  +91 84520 88500
+                  {buyPhoneDisplay}
                 </span>
               </a>
 
               {/* Compact phone button for lg/iPad screens */}
               <a 
-                href="tel:+918452088500" 
+                href={`tel:+${buyPhone}`} 
                 className="flex xl:hidden w-8 h-8 rounded-full frost-pill items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
-                title="Call Patel Motors: +91 84520 88500"
+                title={`Call Patel Motors (Buy Bikes): ${buyPhoneDisplay}`}
               >
                 <Phone className="w-3.5 h-3.5 stroke-[1.8] text-orange-400" />
               </a>
@@ -286,11 +291,11 @@ export default function CustomerLayout() {
               {/* Frosted Social & Location Icons */}
               <div className="flex items-center space-x-1.5 xl:space-x-2 shrink-0">
                 <a 
-                  href="https://wa.me/918452088500" 
+                  href={`https://wa.me/${buyPhone}`} 
                   target="_blank" 
                   rel="noreferrer" 
                   className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-white hover:border-[#25D366]/60 transition-all shrink-0"
-                  title="WhatsApp"
+                  title="WhatsApp Inquiries (Buy Bikes)"
                 >
                   <MessageCircle className="w-3.5 h-3.5 stroke-[1.8]" />
                 </a>
@@ -318,14 +323,14 @@ export default function CustomerLayout() {
             {/* Mobile / Tablet Quick Actions (< lg) */}
             <div className="flex lg:hidden items-center space-x-2 sm:space-x-3 shrink-0">
               <a 
-                href="tel:+918452088500" 
+                href={`tel:+${buyPhone}`} 
                 className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-zinc-200 hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
                 title="Call Showroom"
               >
                 <Phone className="w-3.5 h-3.5 stroke-[1.8] text-orange-400" />
               </a>
               <a 
-                href="https://wa.me/918452088500" 
+                href={`https://wa.me/${buyPhone}`} 
                 target="_blank" 
                 rel="noreferrer" 
                 className="w-8 h-8 rounded-full frost-pill flex items-center justify-center text-[#25D366] hover:text-white transition-all hover:scale-105 active:scale-95 shrink-0"
@@ -427,8 +432,8 @@ export default function CustomerLayout() {
                   <Instagram className="w-3.5 h-3.5 text-[#E4405F]" />
                   <span>@patelmotorsmumbai</span>
                 </a>
-                <a href="tel:+918452088500" className="text-zinc-300 hover:text-white">
-                  +91 84520 88500
+                <a href={`tel:+${buyPhone}`} className="text-zinc-300 hover:text-white">
+                  {buyPhoneDisplay}
                 </a>
               </div>
             </div>
@@ -479,10 +484,10 @@ export default function CustomerLayout() {
               >
                 <Instagram className="w-4 h-4" />
               </a>
-              <a href="https://wa.me/918452088500" target="_blank" rel="noreferrer" className="p-2.5 rounded-full frost-pill hover:bg-[#25D366] hover:text-white transition-all text-[#25D366]" title="WhatsApp">
+              <a href={`https://wa.me/${buyPhone}`} target="_blank" rel="noreferrer" className="p-2.5 rounded-full frost-pill hover:bg-[#25D366] hover:text-white transition-all text-[#25D366]" title="WhatsApp Inquiries">
                 <MessageCircle className="w-4 h-4" />
               </a>
-              <a href="tel:+918452088500" className="p-2.5 rounded-full frost-pill hover:bg-white hover:text-black transition-all text-white" title="Call Showroom">
+              <a href={`tel:+${buyPhone}`} className="p-2.5 rounded-full frost-pill hover:bg-white hover:text-black transition-all text-white" title="Call Showroom">
                 <Phone className="w-4 h-4" />
               </a>
             </div>
@@ -522,11 +527,49 @@ export default function CustomerLayout() {
                   Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai, Maharashtra 400028
                 </a>
               </li>
-              <li className="flex items-center">
-                <Phone className="w-4 h-4 text-orange-400 mr-2.5 shrink-0" />
-                <a href="tel:+918452088500" className="hover:text-white font-mono font-bold text-white">+91 84520 88500</a>
+              <li className="pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 text-orange-400 mr-2.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">Buy Bikes</div>
+                      <a href={`tel:+${buyPhone}`} className="hover:text-white font-mono font-bold text-white text-xs">{buyPhoneDisplay}</a>
+                    </div>
+                  </div>
+                  <a 
+                    href={`https://wa.me/${buyPhone}`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="px-2.5 py-1 rounded-full frost-pill text-[#25D366] hover:bg-[#25D366] hover:text-white text-[10px] font-mono tracking-wider transition-all flex items-center gap-1"
+                    title="WhatsApp for buying bikes"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
               </li>
-              <li className="flex items-center">
+              <li className="pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Bike className="w-4 h-4 text-orange-400 mr-2.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">Sell Your Bike</div>
+                      <a href={`tel:+${sellPhone}`} className="hover:text-white font-mono font-bold text-white text-xs">{sellPhoneDisplay}</a>
+                    </div>
+                  </div>
+                  <a 
+                    href={`https://wa.me/${sellPhone}`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="px-2.5 py-1 rounded-full frost-pill text-[#25D366] hover:bg-[#25D366] hover:text-white text-[10px] font-mono tracking-wider transition-all flex items-center gap-1"
+                    title="WhatsApp for selling your bike"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-center pt-2 border-t border-white/10">
                 <Instagram className="w-4 h-4 text-orange-400 mr-2.5 shrink-0" />
                 <a 
                   href="https://www.instagram.com/patelmotorsmumbai/" 

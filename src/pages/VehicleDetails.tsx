@@ -1,13 +1,14 @@
 import { useParams, Link } from 'react-router-dom';
 import { formatPrice } from '../data/mockData';
-import { CheckCircle2, ChevronLeft, ChevronRight, MapPin, Search, Share2, Copy, Check, X, Mail, Instagram, Plus } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, MapPin, Search, Share2, Copy, Check, X, Mail, Instagram, Plus, Lock } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useVehicles } from '../context/VehicleContext';
 import { Helmet } from 'react-helmet-async';
 import { SmartImage, VEHICLE_PLACEHOLDER_FALLBACK } from '../components/SmartImage';
+import { BUY_BIKES_PHONE, BUY_BIKES_FORMATTED } from '../lib/whatsapp';
 
 export default function VehicleDetails() {
-  const { vehicles, loading } = useVehicles();
+  const { vehicles, loading, siteConfig } = useVehicles();
   const { id } = useParams();
   const car = vehicles.find(v => v.id === id);
   const [activeImage, setActiveImage] = useState(0);
@@ -119,8 +120,8 @@ export default function VehicleDetails() {
   }, [isFullscreen, activeImage, car?.images]);
 
   // EMI Calculator State Variables (hooks declared unconditionally)
-  const [interestRate, setInterestRate] = useState<number>(8.5);
-  const [tenureYears, setTenureYears] = useState<number>(5);
+  const interestRate = 13.0; // Locked at 13% p.a.
+  const [tenureYears, setTenureYears] = useState<number>(3); // Max tenure is 3 years
   const [loanAmount, setLoanAmount] = useState<number>(0);
 
   // Share Modal State Variables (hooks declared unconditionally)
@@ -137,7 +138,7 @@ export default function VehicleDetails() {
     if (!car) return { monthlyEmi: 0, totalInterest: 0, totalPayable: 0 };
     const P = loanAmount || Math.round(car.price * 0.8);
     const r = (interestRate / 12) / 100;
-    const n = tenureYears * 12;
+    const n = Math.min(Math.max(tenureYears, 1), 3) * 12;
     
     let emi = 0;
     if (r === 0) {
@@ -175,18 +176,21 @@ export default function VehicleDetails() {
     );
   }
 
+  const buyPhone = siteConfig?.buyWhatsappNumber || siteConfig?.whatsappNumber || BUY_BIKES_PHONE;
+  const buyPhoneDisplay = buyPhone.endsWith('9819655210') ? BUY_BIKES_FORMATTED : `+${buyPhone}`;
+
   const handleWhatsApp = () => {
     const message = encodeURIComponent(`Hi, I'm interested in the ${car.year} ${car.make} ${car.model} (${car.variant}) listed at ${formatPrice(car.price)} on Patel Motors website. Please share more details.`);
-    window.open(`https://wa.me/918452088500?text=${message}`, '_blank');
+    window.open(`https://wa.me/${buyPhone}?text=${message}`, '_blank');
   };
 
   const handleWhatsAppPhotos = () => {
     const message = encodeURIComponent(`Hi, I'm interested in the ${car.year} ${car.make} ${car.model} (${car.variant}) listed at ${formatPrice(car.price)} on Patel Motors website. Please share more photos of this bike.`);
-    window.open(`https://wa.me/918452088500?text=${message}`, '_blank');
+    window.open(`https://wa.me/${buyPhone}?text=${message}`, '_blank');
   };
 
   const handleCall = () => {
-    window.open(`tel:+918452088500`);
+    window.open(`tel:+${buyPhone}`);
   };
 
   const pageTitle = `${car.year} ${car.make} ${car.model} ${car.variant} | Patel Motors Mumbai`;
@@ -400,7 +404,7 @@ export default function VehicleDetails() {
 
         <div className={`space-y-2 font-sans uppercase font-bold ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}>
           <button onClick={handleCall} className={`w-full bg-white hover:bg-zinc-100 text-black rounded-full transition-all duration-300 shadow-md font-sans font-bold cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
-            Call Us (+91 84520 88500)
+            Call Us ({buyPhoneDisplay})
           </button>
           <button onClick={handleWhatsApp} className={`w-full frost-pill text-white hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
             <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 12.008 0c3.205.001 6.216 1.25 8.484 3.52 2.268 2.27 3.516 5.283 3.515 8.491-.005 6.655-5.344 12.003-11.95 12.003-.111 0-.221 0-.332-.005l-5.69 2.12c-.22.08-.454.04-.63-.12l-.35-.35zM6.57 17.51l.36.21c1.55.93 3.32 1.42 5.15 1.42a9.92 9.92 0 0 0 9.95-9.94c0-2.65-1.03-5.15-2.9-7.02C17.26 3.2 14.77 2.17 12.1 2.17 6.64 2.17 2.2 6.61 2.2 12.07c0 1.93.53 3.82 1.54 5.43l.23.37-1.01 3.69 3.61-.95zM17.43 14.93c-.29-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07a8.1 8.1 0 0 1-2.39-1.48 8.94 8.94 0 0 1-1.65-2.05c-.17-.3-.02-.46.13-.61.13-.13.29-.34.44-.51.15-.17.2-.29.3-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.59-.49-.51-.67-.52l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.22 3.1 1.05 1.41 1.74 1.74 3.1 2.45a9.5 9.5 0 0 0 3.7.8c1.3-.01 2.44-.45 2.74-1 .3-.53.3-1 .22-1.12-.08-.12-.3-.19-.59-.34z"/></svg>
@@ -421,7 +425,9 @@ export default function VehicleDetails() {
       <div className={`frost-card relative rounded-2xl shadow-xl font-sans min-w-0 ${isMobile ? 'p-4 sm:p-5 space-y-4' : 'p-5 lg:p-6 xl:p-8 space-y-5'}`}>
         <h2 className={`font-cinzel font-bold text-white uppercase tracking-widest border-b border-white/15 flex items-center justify-between ${isMobile ? 'pb-2 text-xs' : 'pb-3 text-sm'}`}>
           <span>EMI ESTIMATE CALCULATOR</span>
-          <span className="text-[9px] uppercase tracking-widest font-sans text-zinc-300 font-bold">Live Rates</span>
+          <span className="text-[9px] uppercase tracking-wider font-sans text-orange-400 font-bold flex items-center gap-1">
+            <Lock className="w-2.5 h-2.5" /> 13% Fixed • Max 3 Yrs
+          </span>
         </h2>
         
         {/* Loan Amount Slider */}
@@ -445,45 +451,62 @@ export default function VehicleDetails() {
           </div>
         </div>
 
-        {/* Interest Rate Slider */}
-        <div className="space-y-2">
+        {/* Interest Rate (Locked at 13% p.a.) */}
+        <div className="space-y-1.5 p-3 bg-white/5 border border-white/10 rounded-xl">
           <div className="flex justify-between items-center text-xs">
-            <label className="text-zinc-300 font-semibold uppercase tracking-wider font-sans">Interest Rate</label>
-            <span className="text-white font-bold font-sans">{interestRate.toFixed(2)}% p.a.</span>
+            <label className="text-zinc-200 font-semibold uppercase tracking-wider font-sans flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-orange-400" />
+              <span>Interest Rate</span>
+              <span className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded font-mono font-semibold">Locked</span>
+            </label>
+            <span className="text-white font-bold font-sans text-sm bg-black/40 px-2.5 py-0.5 rounded-md border border-white/15">
+              13.00% p.a.
+            </span>
           </div>
-          <input 
-            type="range"
-            min="5"
-            max="20"
-            step="0.25"
-            value={interestRate}
-            onChange={(e) => setInterestRate(Number(e.target.value))}
-            className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
-          />
-          <div className="flex justify-between text-[8px] sm:text-[9px] text-zinc-400 font-sans tracking-wider uppercase font-semibold">
-            <span>5.0% Min</span>
-            <span>20.0% Max</span>
-          </div>
+          <p className="text-[9px] text-zinc-400 font-sans leading-tight">
+            Fixed standard interest rate locked at 13% per annum for two-wheeler loans.
+          </p>
         </div>
 
-        {/* Tenure Slider */}
-        <div className="space-y-2">
+        {/* Tenure Slider & Selector (Max 3 Years) */}
+        <div className="space-y-2.5">
           <div className="flex justify-between items-center text-xs">
             <label className="text-zinc-300 font-semibold uppercase tracking-wider font-sans">Tenure (Years)</label>
             <span className="text-white font-bold font-sans">{tenureYears} {tenureYears === 1 ? 'Year' : 'Years'} ({tenureYears * 12} Months)</span>
           </div>
+
+          {/* Quick Select Buttons */}
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 2, 3].map((yrs) => (
+              <button
+                key={yrs}
+                type="button"
+                onClick={() => setTenureYears(yrs)}
+                className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border ${
+                  tenureYears === yrs
+                    ? 'bg-white text-zinc-950 border-white shadow-md font-bold'
+                    : 'bg-white/5 text-zinc-300 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                {yrs} {yrs === 1 ? 'Year' : 'Years'}
+                {yrs === 3 && <span className="block text-[8px] text-orange-400 uppercase font-mono font-bold">Max</span>}
+              </button>
+            ))}
+          </div>
+
           <input 
             type="range"
             min="1"
-            max="7"
+            max="3"
             step="1"
             value={tenureYears}
-            onChange={(e) => setTenureYears(Number(e.target.value))}
+            onChange={(e) => setTenureYears(Math.min(3, Math.max(1, Number(e.target.value))))}
             className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white focus:outline-none"
           />
           <div className="flex justify-between text-[8px] sm:text-[9px] text-zinc-400 font-sans tracking-wider uppercase font-semibold">
-            <span>1 Year</span>
-            <span>7 Years</span>
+            <span>1 Year (12 Mo)</span>
+            <span>2 Years (24 Mo)</span>
+            <span className="text-orange-400 font-bold">Max 3 Years (36 Mo)</span>
           </div>
         </div>
 

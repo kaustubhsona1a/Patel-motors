@@ -982,7 +982,7 @@ export default function AdminInventory() {
                   </div>
                   <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
                     Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
-                    Phone: +91 84520 88500 | Email: sales@patelmotors.in<br />
+                    Phone: +91 98196 55210 | Email: sales@patelmotors.in<br />
                     GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
                   </div>
                 </div>
@@ -1250,7 +1250,7 @@ export default function AdminInventory() {
                   </div>
                   <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
                     Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
-                    Phone: +91 84520 88500 | Email: sales@patelmotors.in<br />
+                    Phone: +91 93205 56671 | Email: sales@patelmotors.in<br />
                     GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
                   </div>
                 </div>

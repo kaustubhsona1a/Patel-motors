@@ -17,6 +17,8 @@ import {
   formatBikeSellWhatsAppMessage, 
   createWhatsAppUrl, 
   forwardToWhatsApp, 
+  SELL_BIKES_PHONE,
+  SELL_BIKES_FORMATTED,
   DEFAULT_DEALER_WHATSAPP 
 } from '../lib/whatsapp';
 
@@ -151,8 +153,8 @@ export default function SellCar() {
         images: uploadedImageUrls
       });
 
-      // 5. Target numbers & WhatsApp links
-      const dealerPhone = siteConfig?.whatsappNumber || DEFAULT_DEALER_WHATSAPP;
+      // 5. Target numbers & WhatsApp links (dedicated number 9320556671 for selling bikes)
+      const dealerPhone = siteConfig?.sellWhatsappNumber || SELL_BIKES_PHONE;
       const dealerUrl = createWhatsAppUrl(dealerPhone, whatsappText);
       const customerUrl = createWhatsAppUrl(formData.phone, whatsappText);
 
@@ -267,7 +269,7 @@ export default function SellCar() {
                 className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold rounded-xl text-xs sm:text-sm tracking-wide uppercase transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 font-sans cursor-pointer text-center leading-snug"
               >
                 <MessageCircle className="w-4 h-4 fill-white shrink-0" />
-                <span>Forward to Patel Motors WhatsApp (+91 84520 88500)</span>
+                <span>Forward to Patel Motors Sell Desk (+91 93205 56671)</span>
               </a>
 
               <a

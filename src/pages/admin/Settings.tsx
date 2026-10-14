@@ -79,19 +79,33 @@ export default function AdminSettings() {
   const [customHeroMobileImageUrl, setCustomHeroMobileImageUrl] = useState('');
   const [customHeroVideoUrl, setCustomHeroVideoUrl] = useState('');
   const [customHeroMobileVideoUrl, setCustomHeroMobileVideoUrl] = useState('');
-  const [customWhatsapp, setCustomWhatsapp] = useState(siteConfig.whatsappNumber || '918452088500');
+  const [customSellWhatsapp, setCustomSellWhatsapp] = useState(siteConfig.sellWhatsappNumber || '919320556671');
+  const [customBuyWhatsapp, setCustomBuyWhatsapp] = useState(siteConfig.buyWhatsappNumber || siteConfig.whatsappNumber || '919819655210');
 
   React.useEffect(() => {
-    if (siteConfig.whatsappNumber) {
-      setCustomWhatsapp(siteConfig.whatsappNumber);
+    if (siteConfig.sellWhatsappNumber) {
+      setCustomSellWhatsapp(siteConfig.sellWhatsappNumber);
     }
-  }, [siteConfig.whatsappNumber]);
+    if (siteConfig.buyWhatsappNumber) {
+      setCustomBuyWhatsapp(siteConfig.buyWhatsappNumber);
+    } else if (siteConfig.whatsappNumber) {
+      setCustomBuyWhatsapp(siteConfig.whatsappNumber);
+    }
+  }, [siteConfig.sellWhatsappNumber, siteConfig.buyWhatsappNumber, siteConfig.whatsappNumber]);
 
-  const handleSaveWhatsApp = async () => {
-    if (!customWhatsapp.trim()) return;
-    const sanitized = customWhatsapp.replace(/\D/g, '');
-    await updateSiteConfig({ whatsappNumber: sanitized });
-    setSuccess('WhatsApp forwarding number updated successfully!');
+  const handleSaveSellWhatsApp = async () => {
+    if (!customSellWhatsapp.trim()) return;
+    const sanitized = customSellWhatsapp.replace(/\D/g, '');
+    await updateSiteConfig({ sellWhatsappNumber: sanitized });
+    setSuccess('Sell Your Bike desk number updated successfully!');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const handleSaveBuyWhatsApp = async () => {
+    if (!customBuyWhatsapp.trim()) return;
+    const sanitized = customBuyWhatsapp.replace(/\D/g, '');
+    await updateSiteConfig({ buyWhatsappNumber: sanitized, whatsappNumber: sanitized });
+    setSuccess('Buy Bikes inquiry number updated successfully!');
     setTimeout(() => setSuccess(''), 3000);
   };
 
@@ -349,33 +363,65 @@ export default function AdminSettings() {
 
         <hr className="border-white/5" />
 
-        {/* WhatsApp Forwarding & Notification Number */}
-        <div className="border-l-2 border-[#25D366] pl-4">
+        {/* Sell Your Bike Enquiries Number */}
+        <div className="border-l-2 border-orange-500 pl-4">
           <div className="flex items-center space-x-2 mb-1">
-            <h2 className="text-sm font-serif font-bold text-white uppercase tracking-widest">WhatsApp Forwarding Number</h2>
-            <span className="bg-[#25D366]/20 text-[#25D366] text-[8px] font-bold font-mono px-2 py-0.5 rounded tracking-wider uppercase border border-[#25D366]/30">Active</span>
+            <h2 className="text-sm font-serif font-bold text-white uppercase tracking-widest">Sell Your Bike — WhatsApp & Enquiries Desk</h2>
+            <span className="bg-orange-500/20 text-orange-400 text-[8px] font-bold font-mono px-2 py-0.5 rounded tracking-wider uppercase border border-orange-500/30">Sell Desk</span>
           </div>
           <p className="text-zinc-400 text-[10px] uppercase font-mono tracking-wider mb-4">
-            Bike sell submissions from customers are forwarded to this WhatsApp number for appraisal.
+            All customer "Sell Your Bike" appraisal submissions and sell queries are routed to this number.
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-lg">
             <input
               type="text"
-              placeholder="918452088500"
-              value={customWhatsapp}
-              onChange={(e) => setCustomWhatsapp(e.target.value)}
+              placeholder="919320556671"
+              value={customSellWhatsapp}
+              onChange={(e) => setCustomSellWhatsapp(e.target.value)}
               className="flex-grow bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white font-mono"
             />
             <button
               type="button"
-              onClick={handleSaveWhatsApp}
-              className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold px-5 py-2.5 rounded-xl text-xs uppercase font-mono tracking-wider transition-all shadow-md shrink-0 cursor-pointer"
+              onClick={handleSaveSellWhatsApp}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs uppercase font-mono tracking-wider transition-all shadow-md shrink-0 cursor-pointer"
             >
-              Update Number
+              Update Sell Number
             </button>
           </div>
           <p className="text-[10px] text-zinc-500 font-mono mt-1.5">
-            Format: 918452088500 (+91 84520 88500). Number with country code without + or spaces.
+            Active default: 919320556671 (+91 93205 56671). Format without + or spaces.
+          </p>
+        </div>
+
+        <hr className="border-white/5" />
+
+        {/* Buy Bikes Inquiries & Showroom Number */}
+        <div className="border-l-2 border-[#25D366] pl-4">
+          <div className="flex items-center space-x-2 mb-1">
+            <h2 className="text-sm font-serif font-bold text-white uppercase tracking-widest">Buy Bikes — WhatsApp & Showroom Inquiries</h2>
+            <span className="bg-[#25D366]/20 text-[#25D366] text-[8px] font-bold font-mono px-2 py-0.5 rounded tracking-wider uppercase border border-[#25D366]/30">Buy Desk</span>
+          </div>
+          <p className="text-zinc-400 text-[10px] uppercase font-mono tracking-wider mb-4">
+            Customer inquiries on verified motorcycles, vehicle detail page WhatsApp clicks, and showroom calls are routed to this number.
+          </p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-lg">
+            <input
+              type="text"
+              placeholder="919819655210"
+              value={customBuyWhatsapp}
+              onChange={(e) => setCustomBuyWhatsapp(e.target.value)}
+              className="flex-grow bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white font-mono"
+            />
+            <button
+              type="button"
+              onClick={handleSaveBuyWhatsApp}
+              className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold px-5 py-2.5 rounded-xl text-xs uppercase font-mono tracking-wider transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              Update Buy Number
+            </button>
+          </div>
+          <p className="text-[10px] text-zinc-500 font-mono mt-1.5">
+            Active default: 919819655210 (+91 98196 55210). Format without + or spaces.
           </p>
         </div>
 

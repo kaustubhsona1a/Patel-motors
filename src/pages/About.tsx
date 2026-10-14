@@ -6,9 +6,12 @@ import React, { useState } from 'react';
 import { SmartImage } from '../components/SmartImage';
 import { isBombayMotorsUrl } from '../lib/imageCache';
 import { Helmet } from 'react-helmet-async';
+import { BUY_BIKES_PHONE, BUY_BIKES_FORMATTED } from '../lib/whatsapp';
 
 export default function About() {
   const { siteConfig } = useVehicles();
+  const buyPhone = siteConfig?.buyWhatsappNumber || siteConfig?.whatsappNumber || BUY_BIKES_PHONE;
+  const buyPhoneDisplay = buyPhone.endsWith('9819655210') ? BUY_BIKES_FORMATTED : `+${buyPhone}`;
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
 
   const deliveries = (siteConfig.clientDeliveries || []).filter(img => Boolean(img) && !isBombayMotorsUrl(img));
@@ -187,10 +190,10 @@ export default function About() {
                 <span>Google Maps Location</span>
               </a>
               <a 
-                href="tel:+918452088500" 
+                href={`tel:+${buyPhone}`} 
                 className="px-6 py-3 frost-pill text-white hover:text-orange-400 rounded-full text-xs font-bold uppercase tracking-wider transition-all text-center"
               >
-                Call: +91 84520 88500
+                Call: {buyPhoneDisplay}
               </a>
             </div>
           </div>

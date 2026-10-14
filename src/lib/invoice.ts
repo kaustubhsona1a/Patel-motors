@@ -8,6 +8,8 @@ export interface DealershipInfo {
   state: string;
   pinCode: string;
   phone: string;
+  buyPhone?: string;
+  sellPhone?: string;
   email: string;
   website: string;
   gstin?: string;
@@ -22,7 +24,9 @@ export const PATEL_MOTORS_DEALERSHIP: DealershipInfo = {
   city: "Mumbai",
   state: "Maharashtra",
   pinCode: "400028",
-  phone: "+91 84520 88500",
+  phone: "+91 98196 55210",
+  buyPhone: "+91 98196 55210",
+  sellPhone: "+91 93205 56671",
   email: "sales@patelmotors.in",
   website: "https://maps.app.goo.gl/5puPNNYsbCpFjaPbA",
   gstin: "27AABCP1234F1Z8",
