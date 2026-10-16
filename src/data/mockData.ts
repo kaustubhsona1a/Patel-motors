@@ -41,8 +41,19 @@ export interface AcquisitionRecord {
   sellerAddress?: string; // Residential address
   sellerIdentity?: string; // Aadhaar / PAN / Driving License ID
   purchaseAmount: number; // Agreed acquisition price in INR
+  amountPaid?: number; // Upfront / initial amount paid to seller
+  balanceDue?: number; // Balance amount kept pending because of remaining documents
+  hasBalancePending?: boolean; // True if balance payment is withheld for documents
+  balancePaymentNote?: string; // Specific condition/note (e.g., "Balance ₹15,000 kept pending for Original RC & Bank NOC")
+  pendingDocuments?: string[]; // List of documents pending from seller
+  settlementStatus?: 'Fully Settled' | 'Pending Balance' | 'Paid in Full' | string;
+  settlementDate?: string; // Date when balance payment was disbursed
+  settlementPaymentMethod?: string; // Payment method of balance payment
+  settlementPaymentRef?: string; // UTR / Cheque / Transaction ref of balance payment
+  settlementNote?: string; // Note / receipt details when balance was cleared
+  settledDeliveryNoteNumber?: string; // Settled voucher reference
   paymentMethod: 'Bank Transfer (NEFT/RTGS)' | 'UPI' | 'Cheque' | 'Cash' | 'Card' | string;
-  paymentStatus: 'Paid in Full' | 'Token / Advance' | 'Pending' | string;
+  paymentStatus: 'Paid in Full' | 'Token / Advance' | 'Pending Balance' | 'Pending' | string;
   paymentRef?: string; // UTR / Cheque No / Transaction Ref
   originalRcReceived?: boolean;
   insuranceCopyReceived?: boolean;

@@ -18,6 +18,7 @@ import {
   numberToWordsIndian, 
   PATEL_MOTORS_DEALERSHIP 
 } from '../../lib/invoice';
+import { PatelMotorsLogo } from '../../components/PatelMotorsLogo';
 
 const RECOMMENDED_ANGLES = [
   "Front View",
@@ -88,6 +89,9 @@ export default function AdminAddVehicle() {
   const [images, setImages] = useState<string[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState<{ chassis?: string; engine?: string }>({});
+
   // Delivery Note & Inward Acquisition State
   const [includeDeliveryNote, setIncludeDeliveryNote] = useState(false);
   const [previewDeliveryNoteOpen, setPreviewDeliveryNoteOpen] = useState(false);
@@ -101,6 +105,11 @@ export default function AdminAddVehicle() {
     sellerAddress: '',
     sellerIdentity: '',
     purchaseAmount: 0,
+    amountPaid: 0,
+    balanceDue: 0,
+    hasBalancePending: false,
+    balancePaymentNote: '',
+    pendingDocuments: [],
     paymentMethod: 'Bank Transfer (NEFT/RTGS)',
     paymentStatus: 'Paid in Full',
     paymentRef: '',
@@ -149,17 +158,29 @@ export default function AdminAddVehicle() {
         setImages(bike.images || []);
 
         if (bike.acquisitionInfo) {
+          const acq = bike.acquisitionInfo;
+          const totalAmt = acq.purchaseAmount || (bike.purchasePrice || 0);
+          const hasPending = Boolean(acq.hasBalancePending || (acq.balanceDue !== undefined && acq.balanceDue > 0));
+          const bal = acq.balanceDue || 0;
+          const paid = acq.amountPaid !== undefined ? acq.amountPaid : (hasPending ? Math.max(0, totalAmt - bal) : totalAmt);
+
           setAcquisitionData({
-            ...bike.acquisitionInfo,
-            deliveryNoteNumber: bike.acquisitionInfo.deliveryNoteNumber || generateDeliveryNoteNumber(bike),
-            acquisitionDate: bike.acquisitionInfo.acquisitionDate || new Date().toISOString().split('T')[0],
-            purchaseAmount: bike.acquisitionInfo.purchaseAmount || (bike.purchasePrice || 0)
+            ...acq,
+            deliveryNoteNumber: acq.deliveryNoteNumber || generateDeliveryNoteNumber(bike),
+            acquisitionDate: acq.acquisitionDate || new Date().toISOString().split('T')[0],
+            purchaseAmount: totalAmt,
+            amountPaid: paid,
+            balanceDue: bal,
+            hasBalancePending: hasPending,
+            balancePaymentNote: acq.balancePaymentNote || '',
+            pendingDocuments: acq.pendingDocuments || []
           });
           setIncludeDeliveryNote(true);
         } else if (bike.purchasePrice) {
           setAcquisitionData(prev => ({
             ...prev,
-            purchaseAmount: bike.purchasePrice || 0
+            purchaseAmount: bike.purchasePrice || 0,
+            amountPaid: bike.purchasePrice || 0
           }));
         }
       }
@@ -264,9 +285,20 @@ export default function AdminAddVehicle() {
   };
 
   const getAcquisitionPayload = (): AcquisitionRecord | undefined => {
-    if (!includeDeliveryNote && !acquisitionData.sellerName.trim()) {
+    if (!includeDeliveryNote && !acquisitionData.sellerName.trim() && !acquisitionData.hasBalancePending) {
       return undefined;
     }
+    const totalAmount = Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0;
+    const hasPending = Boolean(acquisitionData.hasBalancePending && (acquisitionData.balanceDue ? acquisitionData.balanceDue > 0 : true));
+    const balance = hasPending 
+      ? (acquisitionData.balanceDue !== undefined && acquisitionData.balanceDue > 0 
+          ? Number(acquisitionData.balanceDue) 
+          : Math.max(0, totalAmount - Number(acquisitionData.amountPaid || 0)))
+      : 0;
+    const initialPaid = hasPending
+      ? Math.max(0, totalAmount - balance)
+      : (acquisitionData.amountPaid !== undefined && acquisitionData.amountPaid > 0 ? acquisitionData.amountPaid : totalAmount);
+
     return {
       ...acquisitionData,
       sellerName: acquisitionData.sellerName.trim() || 'Seller (Previous Owner)',
@@ -274,8 +306,17 @@ export default function AdminAddVehicle() {
       sellerEmail: acquisitionData.sellerEmail?.trim() || undefined,
       sellerAddress: acquisitionData.sellerAddress?.trim() || undefined,
       sellerIdentity: acquisitionData.sellerIdentity?.trim() || undefined,
-      purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0,
-      deliveryNoteNumber: acquisitionData.deliveryNoteNumber || generateDeliveryNoteNumber({ make: formData.make }),
+      purchaseAmount: totalAmount,
+      amountPaid: initialPaid,
+      balanceDue: balance,
+      hasBalancePending: hasPending && balance > 0,
+      balancePaymentNote: acquisitionData.balancePaymentNote?.trim() || undefined,
+      pendingDocuments: acquisitionData.pendingDocuments || [],
+      settlementStatus: (acquisitionData.settlementStatus === 'Fully Settled' || (!hasPending && balance === 0))
+        ? 'Fully Settled'
+        : (balance > 0 ? 'Pending Balance' : 'Paid in Full'),
+      paymentStatus: balance > 0 ? 'Pending Balance' : (acquisitionData.paymentStatus || 'Paid in Full'),
+      deliveryNoteNumber: acquisitionData.deliveryNoteNumber || generateDeliveryNoteNumber({ make: formData.make, registration: formData.registration }),
       generatedAt: acquisitionData.generatedAt || new Date().toISOString()
     };
   };
@@ -372,6 +413,22 @@ export default function AdminAddVehicle() {
       return;
     }
 
+    // MANDATORY REQUIREMENT: Chassis Number (VIN) and Engine Number are required when acquiring a bike
+    const trimmedChassis = formData.chassisNumber.trim();
+    const trimmedEngine = formData.engineNumber.trim();
+    if (!trimmedChassis || !trimmedEngine) {
+      const errors: { chassis?: string; engine?: string } = {};
+      if (!trimmedChassis) errors.chassis = 'Chassis / VIN number is mandatory for motorcycle acquisition';
+      if (!trimmedEngine) errors.engine = 'Engine number is mandatory for motorcycle acquisition';
+      setFormErrors(errors);
+
+      const el = document.getElementById(trimmedChassis ? 'engine-number-input' : 'chassis-number-input');
+      el?.focus();
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setFormErrors({});
+
     const acqInfo = getAcquisitionPayload();
 
     const bikePayload: Partial<Vehicle> = {
@@ -455,18 +512,31 @@ export default function AdminAddVehicle() {
     if (e) e.preventDefault();
     formSaved.current = true;
     
+    // MANDATORY REQUIREMENT: Chassis Number (VIN) and Engine Number are required to generate Delivery Note
+    const trimmedChassis = formData.chassisNumber.trim();
+    const trimmedEngine = formData.engineNumber.trim();
+    if (!trimmedChassis || !trimmedEngine) {
+      const errors: { chassis?: string; engine?: string } = {};
+      if (!trimmedChassis) errors.chassis = 'Chassis / VIN number is mandatory for motorcycle acquisition';
+      if (!trimmedEngine) errors.engine = 'Engine number is mandatory for motorcycle acquisition';
+      setFormErrors(errors);
+
+      const el = document.getElementById(trimmedChassis ? 'engine-number-input' : 'chassis-number-input');
+      el?.focus();
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setFormErrors({});
+
     // Ensure includeDeliveryNote is active
     setIncludeDeliveryNote(true);
 
-    const acqInfo: AcquisitionRecord = {
+    const acqInfo: AcquisitionRecord = getAcquisitionPayload() || {
       ...acquisitionData,
       sellerName: acquisitionData.sellerName.trim() || 'Seller (Previous Owner)',
       sellerPhone: acquisitionData.sellerPhone.trim() || 'N/A',
-      sellerEmail: acquisitionData.sellerEmail?.trim() || undefined,
-      sellerAddress: acquisitionData.sellerAddress?.trim() || undefined,
-      sellerIdentity: acquisitionData.sellerIdentity?.trim() || undefined,
       purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0,
-      deliveryNoteNumber: acquisitionData.deliveryNoteNumber || generateDeliveryNoteNumber({ make: formData.make }),
+      deliveryNoteNumber: acquisitionData.deliveryNoteNumber || generateDeliveryNoteNumber({ make: formData.make, registration: formData.registration }),
       generatedAt: acquisitionData.generatedAt || new Date().toISOString()
     };
 
@@ -898,29 +968,77 @@ export default function AdminAddVehicle() {
             </div>
 
             <div>
-              <label className="block text-[10.5px] uppercase font-mono tracking-wider text-zinc-400 mb-1.5">
-                Chassis Number / VIN (Optional)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[10.5px] uppercase font-mono tracking-wider text-white font-bold">
+                  Chassis Number / VIN <span className="text-red-400 font-bold">* (Mandatory)</span>
+                </label>
+                <span className="text-[9px] font-mono uppercase bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-bold">
+                  Required
+                </span>
+              </div>
               <input 
+                id="chassis-number-input"
                 type="text" 
-                placeholder="Optional"
+                required
+                placeholder="e.g. ME4JF5028KH109821"
                 value={formData.chassisNumber}
-                onChange={e => setFormData({ ...formData, chassisNumber: e.target.value.toUpperCase() })}
-                className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all font-mono"
+                onChange={e => {
+                  setFormData({ ...formData, chassisNumber: e.target.value.toUpperCase() });
+                  if (formErrors.chassis) setFormErrors(prev => ({ ...prev, chassis: undefined }));
+                }}
+                className={`w-full px-4 py-3 bg-zinc-900 border rounded-xl text-white outline-none transition-all font-mono font-bold tracking-wider ${
+                  formErrors.chassis 
+                    ? 'border-red-500 ring-1 ring-red-500 bg-red-950/20' 
+                    : 'border-white/10 focus:border-orange-500'
+                }`}
               />
+              {formErrors.chassis ? (
+                <p className="text-[10px] text-red-400 mt-1 font-mono flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{formErrors.chassis}</span>
+                </p>
+              ) : (
+                <p className="text-[9.5px] text-zinc-500 mt-1 font-mono">
+                  Mandatory vehicle identification number (17 alphanumeric chars)
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-[10.5px] uppercase font-mono tracking-wider text-zinc-400 mb-1.5">
-                Engine Number (Optional)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[10.5px] uppercase font-mono tracking-wider text-white font-bold">
+                  Engine Number <span className="text-red-400 font-bold">* (Mandatory)</span>
+                </label>
+                <span className="text-[9px] font-mono uppercase bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded font-bold">
+                  Required
+                </span>
+              </div>
               <input 
+                id="engine-number-input"
                 type="text" 
-                placeholder="Optional"
+                required
+                placeholder="e.g. JF50E-1092837"
                 value={formData.engineNumber}
-                onChange={e => setFormData({ ...formData, engineNumber: e.target.value.toUpperCase() })}
-                className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white transition-all font-mono"
+                onChange={e => {
+                  setFormData({ ...formData, engineNumber: e.target.value.toUpperCase() });
+                  if (formErrors.engine) setFormErrors(prev => ({ ...prev, engine: undefined }));
+                }}
+                className={`w-full px-4 py-3 bg-zinc-900 border rounded-xl text-white outline-none transition-all font-mono font-bold tracking-wider ${
+                  formErrors.engine 
+                    ? 'border-red-500 ring-1 ring-red-500 bg-red-950/20' 
+                    : 'border-white/10 focus:border-orange-500'
+                }`}
               />
+              {formErrors.engine ? (
+                <p className="text-[10px] text-red-400 mt-1 font-mono flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{formErrors.engine}</span>
+                </p>
+              ) : (
+                <p className="text-[9.5px] text-zinc-500 mt-1 font-mono">
+                  Mandatory engine serial number engraved on engine crankcase
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -1120,7 +1238,7 @@ export default function AdminAddVehicle() {
                           />
                           <button
                             type="button"
-                            onClick={() => setAcquisitionData(prev => ({ ...prev, deliveryNoteNumber: generateDeliveryNoteNumber({ make: formData.make }) }))}
+                            onClick={() => setAcquisitionData(prev => ({ ...prev, deliveryNoteNumber: generateDeliveryNoteNumber({ make: formData.make, registration: formData.registration }) }))}
                             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
                             title="Generate new number"
                           >
@@ -1189,11 +1307,33 @@ export default function AdminAddVehicle() {
                           Payment Status
                         </label>
                         <select
-                          value={acquisitionData.paymentStatus}
-                          onChange={e => setAcquisitionData({ ...acquisitionData, paymentStatus: e.target.value })}
+                          value={acquisitionData.hasBalancePending ? 'Pending Balance' : acquisitionData.paymentStatus}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (val === 'Pending Balance') {
+                              const total = Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0;
+                              const bal = acquisitionData.balanceDue && acquisitionData.balanceDue > 0 ? acquisitionData.balanceDue : Math.round(total * 0.1 || 15000);
+                              setAcquisitionData(prev => ({
+                                ...prev,
+                                hasBalancePending: true,
+                                balanceDue: bal,
+                                amountPaid: Math.max(0, total - bal),
+                                paymentStatus: 'Pending Balance'
+                              }));
+                            } else {
+                              setAcquisitionData(prev => ({
+                                ...prev,
+                                hasBalancePending: false,
+                                balanceDue: 0,
+                                amountPaid: Number(formData.purchasePrice) || prev.purchaseAmount || 0,
+                                paymentStatus: val
+                              }));
+                            }
+                          }}
                           className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-sans text-xs"
                         >
                           <option value="Paid in Full">Paid in Full (Disbursed)</option>
+                          <option value="Pending Balance">Partial / Balance Pending (Documents Holdback)</option>
                           <option value="Token / Advance">Token / Advance Paid</option>
                           <option value="Cheque Pending">Cheque Pending Clearance</option>
                         </select>
@@ -1211,6 +1351,178 @@ export default function AdminAddVehicle() {
                           onChange={e => setAcquisitionData({ ...acquisitionData, keysCount: Number(e.target.value) || 2 })}
                           className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-white font-mono text-xs"
                         />
+                      </div>
+
+                      {/* BALANCE PAYMENT & DOCUMENT HOLDBACK SECTION */}
+                      <div className="sm:col-span-2 lg:col-span-4 bg-zinc-950/70 border border-orange-500/20 rounded-xl p-3.5 sm:p-4 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+                          <label className="flex items-center gap-2.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(acquisitionData.hasBalancePending)}
+                              onChange={e => {
+                                const checked = e.target.checked;
+                                const total = Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0;
+                                const bal = checked ? (acquisitionData.balanceDue && acquisitionData.balanceDue > 0 ? acquisitionData.balanceDue : Math.round(total * 0.1 || 15000)) : 0;
+                                setAcquisitionData(prev => ({
+                                  ...prev,
+                                  hasBalancePending: checked,
+                                  balanceDue: bal,
+                                  amountPaid: checked ? Math.max(0, total - bal) : total,
+                                  paymentStatus: checked ? 'Pending Balance' : 'Paid in Full'
+                                }));
+                              }}
+                              className="w-4 h-4 rounded border-white/20 text-orange-500 focus:ring-0 cursor-pointer"
+                            />
+                            <div>
+                              <span className="text-xs font-mono font-bold text-white uppercase tracking-wider block">
+                                Withhold Balance Payment for Remaining Seller Documents
+                              </span>
+                              <span className="text-[10px] text-zinc-400 font-sans block">
+                                Hold back payment until original RC, Bank NOC, or other papers are handed over.
+                              </span>
+                            </div>
+                          </label>
+
+                          <span className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold uppercase tracking-wider border shrink-0 ${
+                            acquisitionData.hasBalancePending 
+                              ? 'border-amber-500/40 text-amber-400 bg-amber-500/10' 
+                              : 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10'
+                          }`}>
+                            {acquisitionData.hasBalancePending ? `Holdback: ${formatPrice(acquisitionData.balanceDue || 0)}` : 'Full Settlement'}
+                          </span>
+                        </div>
+
+                        {acquisitionData.hasBalancePending && (
+                          <div className="space-y-3 animate-fade-in pt-1">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                                  Agreed Consideration (₹)
+                                </label>
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}
+                                  className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-lg text-white font-mono text-xs font-bold"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] uppercase font-mono tracking-wider text-emerald-400 mb-1 font-bold">
+                                  Amount Paid to Seller Now (₹) *
+                                </label>
+                                <input
+                                  type="number"
+                                  placeholder="e.g. 135000"
+                                  value={acquisitionData.amountPaid || ''}
+                                  onChange={e => {
+                                    const paid = Number(e.target.value) || 0;
+                                    const total = Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0;
+                                    const bal = Math.max(0, total - paid);
+                                    setAcquisitionData(prev => ({
+                                      ...prev,
+                                      amountPaid: paid,
+                                      balanceDue: bal
+                                    }));
+                                  }}
+                                  className="w-full px-3 py-2 bg-zinc-900 border border-emerald-500/30 rounded-lg text-white font-mono text-xs font-bold outline-none focus:border-emerald-400"
+                                />
+                                <p className="text-[9.5px] text-zinc-500 mt-0.5 font-mono">Disbursed at vehicle handover</p>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] uppercase font-mono tracking-wider text-amber-400 mb-1 font-bold">
+                                  Balance Kept Pending (₹) *
+                                </label>
+                                <input
+                                  type="number"
+                                  placeholder="e.g. 15000"
+                                  value={acquisitionData.balanceDue || ''}
+                                  onChange={e => {
+                                    const bal = Number(e.target.value) || 0;
+                                    const total = Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0;
+                                    const paid = Math.max(0, total - bal);
+                                    setAcquisitionData(prev => ({
+                                      ...prev,
+                                      balanceDue: bal,
+                                      amountPaid: paid
+                                    }));
+                                  }}
+                                  className="w-full px-3 py-2 bg-zinc-900 border border-amber-500/30 rounded-lg text-amber-400 font-mono text-xs font-bold outline-none focus:border-amber-400"
+                                />
+                                <p className="text-[9.5px] text-zinc-500 mt-0.5 font-mono">Withheld for pending documents</p>
+                              </div>
+                            </div>
+
+                            {/* Note for Balance Payment */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-[10.5px] uppercase font-mono tracking-wider text-orange-400 font-bold">
+                                  Note / Reason for Balance Payment *
+                                </label>
+                                <span className="text-[9.5px] font-mono text-zinc-400">
+                                  Printed on delivery note & legal undertaking
+                                </span>
+                              </div>
+                              <textarea
+                                rows={2}
+                                placeholder="e.g. Kept ₹15,000 balance pending because seller has not provided Original Smart Card RC and HDFC Bank NOC. Balance will be released immediately upon handover of verified documents."
+                                value={acquisitionData.balancePaymentNote || ''}
+                                onChange={e => setAcquisitionData({ ...acquisitionData, balancePaymentNote: e.target.value })}
+                                className="w-full px-3.5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-white outline-none focus:border-orange-500 font-sans text-xs resize-none"
+                              />
+                            </div>
+
+                            {/* Quick document holdback selector */}
+                            <div>
+                              <span className="block text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1.5">
+                                Specify which documents are pending from seller:
+                              </span>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono text-xs text-zinc-300">
+                                {[
+                                  'Original Smart Card RC',
+                                  'Bank Loan NOC (Form 35)',
+                                  'RTO Forms 29 & 30',
+                                  'Insurance Transfer Policy',
+                                  'Duplicate / Spare Key',
+                                  'Valid PUC Certificate'
+                                ].map(docName => {
+                                  const isPending = (acquisitionData.pendingDocuments || []).includes(docName);
+                                  return (
+                                    <label key={docName} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                                      isPending 
+                                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' 
+                                        : 'bg-zinc-900 border-white/5 text-zinc-400 hover:text-white'
+                                    }`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={isPending}
+                                        onChange={e => {
+                                          const checked = e.target.checked;
+                                          const current = acquisitionData.pendingDocuments || [];
+                                          const next = checked 
+                                            ? [...current, docName]
+                                            : current.filter(d => d !== docName);
+                                          setAcquisitionData({ ...acquisitionData, pendingDocuments: next });
+                                        }}
+                                        className="rounded border-white/20 text-orange-500 focus:ring-0"
+                                      />
+                                      <span className="text-[11px] truncate">{docName}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2 bg-amber-500/5 border border-amber-500/20 p-2.5 rounded-lg text-[10.5px] font-mono text-amber-300">
+                              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                              <span>
+                                <strong>Dealership Workflow:</strong> After receiving these documents from the seller and paying the remaining balance, go to <strong>Inventory &rarr; Settle Balance</strong> to record the final payment and generate a new Inward Invoice where the full amount is settled.
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1566,7 +1878,10 @@ export default function AdminAddVehicle() {
                     };
                     printDeliveryNote(previewBike, {
                       ...acquisitionData,
-                      purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0
+                      purchaseAmount: Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0,
+                      amountPaid: acquisitionData.hasBalancePending ? (acquisitionData.amountPaid || 0) : (Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0),
+                      balanceDue: acquisitionData.hasBalancePending ? (acquisitionData.balanceDue || 0) : 0,
+                      settlementStatus: acquisitionData.hasBalancePending && (acquisitionData.balanceDue || 0) > 0 ? 'Balance Pending' : 'Fully Settled'
                     });
                   }}
                   className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-zinc-950 hover:bg-zinc-200 rounded-lg sm:rounded-xl text-[10.5px] sm:text-xs font-mono uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
@@ -1589,15 +1904,18 @@ export default function AdminAddVehicle() {
             <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
-                <div>
-                  <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
-                  <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
-                    Two-Wheeler Acquisition & Delivery Challan
-                  </div>
-                  <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
-                    Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
-                    Phone: +91 93205 56671 | Email: sales@patelmotors.in<br />
-                    GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <PatelMotorsLogo className="h-12 sm:h-16 w-auto shrink-0 shadow-sm" />
+                  <div>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
+                    <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
+                      Two-Wheeler Acquisition & Delivery Challan
+                    </div>
+                    <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
+                      Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
+                      Phone: +91 93205 56671 | Email: sales@patelmotors.in<br />
+                      GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                    </div>
                   </div>
                 </div>
                 <div className="text-left sm:text-right font-mono shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-zinc-200">
@@ -1722,23 +2040,59 @@ export default function AdminAddVehicle() {
                     <span>Agreed Purchase Price:</span>
                     <span>{formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}</span>
                   </div>
-                  <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
-                    <span>Total Net Disbursed:</span>
-                    <span>{formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
-                    <span>Seller Balance Due:</span>
-                    <span>NIL (Fully Settled)</span>
-                  </div>
-                  <div className="text-[9px] text-zinc-500 pt-1 font-sans">
-                    Status: <strong className="text-emerald-700">{acquisitionData.paymentStatus || 'Paid in Full'}</strong>
-                  </div>
+                  {acquisitionData.hasBalancePending ? (
+                    <>
+                      <div className="flex justify-between text-zinc-700">
+                        <span>Paid at Handover:</span>
+                        <span>{formatPrice(acquisitionData.amountPaid || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-amber-700 font-bold bg-amber-50 p-1 rounded">
+                        <span>Balance Withheld:</span>
+                        <span>{formatPrice(acquisitionData.balanceDue || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1 text-black">
+                        <span>Net Paid so far:</span>
+                        <span>{formatPrice(acquisitionData.amountPaid || 0)}</span>
+                      </div>
+                      <div className="text-[9px] text-amber-800 pt-1 font-sans">
+                        Status: <strong>Balance Pending for Documents</strong>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
+                        <span>Total Net Disbursed:</span>
+                        <span>{formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
+                        <span>Seller Balance Due:</span>
+                        <span>NIL (Fully Settled)</span>
+                      </div>
+                      <div className="text-[9px] text-zinc-500 pt-1 font-sans">
+                        Status: <strong className="text-emerald-700">{acquisitionData.paymentStatus || 'Paid in Full'}</strong>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
+              {/* Holdback Note in Preview */}
+              {acquisitionData.hasBalancePending && acquisitionData.balancePaymentNote && (
+                <div className="bg-amber-50 border border-amber-300 rounded-lg p-2.5 mb-3 text-[9.5px] text-amber-900">
+                  <strong className="block text-[10px] uppercase font-mono tracking-wider text-amber-800 mb-0.5">
+                    ⚠️ Balance Holdback Condition:
+                  </strong>
+                  {acquisitionData.balancePaymentNote}
+                </div>
+              )}
+
               {/* Legal Seller Undertaking */}
               <div className="border-t border-zinc-200 pt-2 text-[8.5px] sm:text-[9px] text-zinc-500 leading-relaxed">
-                <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We ({acquisitionData.sellerName || 'The Seller'}) hereby confirm having sold and delivered physical possession of the motorcycle to Patel Motors. I solemnly affirm that I am the registered lawful owner, that the vehicle has a clear title with no pending police complaints, e-challans, or undisclosed finance liens. I have received the full agreed purchase price of {formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}. From this handover date and time, Patel Motors assumes physical custody of the motorcycle.
+                <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We ({acquisitionData.sellerName || 'The Seller'}) hereby confirm having sold and delivered physical possession of the motorcycle to Patel Motors. I solemnly affirm that I am the registered lawful owner, that the vehicle has a clear title with no pending police complaints, e-challans, or undisclosed finance liens. 
+                {acquisitionData.hasBalancePending 
+                  ? ` I have received an initial payment of ${formatPrice(acquisitionData.amountPaid || 0)}. The balance of ${formatPrice(acquisitionData.balanceDue || 0)} is to be disbursed upon delivery of agreed documents (${acquisitionData.balancePaymentNote || 'as agreed'}).`
+                  : ` I have received the full agreed purchase price of ${formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}.`} 
+                From this handover date and time, Patel Motors assumes physical custody of the motorcycle.
               </div>
 
               {/* Dual Signatures */}

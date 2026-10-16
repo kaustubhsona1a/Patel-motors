@@ -1,4 +1,5 @@
 import { Vehicle, SaleRecord, AcquisitionRecord, formatPrice } from '../data/mockData';
+import { PATEL_MOTORS_LOGO_DATA_URI } from '../components/PatelMotorsLogo';
 
 export interface DealershipInfo {
   name: string;
@@ -86,13 +87,68 @@ export function numberToWordsIndian(amount: number): string {
   return (result.trim() + ' Rupees Only');
 }
 
-export function generateInvoiceNumber(bike?: Vehicle): string {
-  const currentYear = new Date().getFullYear();
-  const nextYearShort = String(currentYear + 1).slice(-2);
-  const finYear = `${currentYear}-${nextYearShort}`;
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  const bikePrefix = bike?.make ? bike.make.substring(0, 3).toUpperCase() : 'MOT';
-  return `PM/${finYear}/${bikePrefix}-${randomSuffix}`;
+/**
+ * Computes Indian Financial Year (April 1 to March 31)
+ * E.g., Oct 2026 -> "2026-27", Feb 2027 -> "2026-27", Apr 2027 -> "2027-28"
+ */
+export function getIndianFinancialYear(date: Date = new Date()): string {
+  const month = date.getMonth(); // 0 is January, 3 is April
+  const year = date.getFullYear();
+  const startYear = month >= 3 ? year : year - 1;
+  const endYearShort = String(startYear + 1).slice(-2);
+  return `${startYear}-${endYearShort}`;
+}
+
+/**
+ * Derives a clean 2-3 letter standard brand code for motorcycle makes
+ */
+export function getBrandPrefix(make?: string): string {
+  if (!make) return 'MOT';
+  const clean = make.trim().toUpperCase();
+  if (clean.includes('ROYAL') || clean.includes('ENFIELD')) return 'RE';
+  if (clean.includes('HARLEY')) return 'HD';
+  if (clean.includes('BMW')) return 'BMW';
+  if (clean.includes('KTM')) return 'KTM';
+  if (clean.includes('TVS')) return 'TVS';
+  const letters = clean.replace(/[^A-Z]/g, '');
+  return letters.substring(0, 3) || 'MOT';
+}
+
+/**
+ * Generates a logical suffix for invoices or delivery notes:
+ * 1. Uses the 4 digits from the vehicle's registration number plate (e.g. "MH 02 EA 4921" -> "4921")
+ * 2. If unregistered or no plate digits, uses persistent dealership sequential sequence (1001, 1002...)
+ */
+export function getLogicalVoucherSuffix(type: 'INV' | 'DN', bike?: Partial<Vehicle>): string {
+  // 1. If vehicle has a registration plate with numbers (e.g. "MH-02-EA-4921" or "MH01AB1042")
+  if (bike?.registration) {
+    const regDigits = bike.registration.replace(/\D/g, '');
+    if (regDigits.length >= 3) {
+      return regDigits.slice(-4);
+    }
+  }
+
+  // 2. Sequential counter maintained in localStorage for dealership continuity
+  try {
+    const storageKey = type === 'INV' ? 'pm_invoice_seq' : 'pm_delivery_note_seq';
+    const current = parseInt(localStorage.getItem(storageKey) || '1000', 10);
+    const next = current + 1;
+    localStorage.setItem(storageKey, String(next));
+    return String(next);
+  } catch {
+    // Deterministic fallback using month-day-hour sequence
+    const now = new Date();
+    const mmdd = `${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    const fallbackSeq = bike?.id ? Math.abs(bike.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 900 + 100 : 101;
+    return `${mmdd}-${fallbackSeq}`;
+  }
+}
+
+export function generateInvoiceNumber(bike?: Partial<Vehicle>): string {
+  const finYear = getIndianFinancialYear();
+  const bikePrefix = getBrandPrefix(bike?.make);
+  const suffix = getLogicalVoucherSuffix('INV', bike);
+  return `PM/${finYear}/${bikePrefix}-${suffix}`;
 }
 
 export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership: DealershipInfo = PATEL_MOTORS_DEALERSHIP): string {
@@ -147,6 +203,20 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
       margin-bottom: 14px;
     }
     .brand-section {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .brand-logo-img {
+      height: 60px;
+      width: auto;
+      border-radius: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.14);
+      border: 1px solid #140908;
+    }
+    .brand-text-block {
       flex: 1;
     }
     .brand-name {
@@ -461,13 +531,16 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
     <!-- Top Dealership Header -->
     <div class="top-bar">
       <div class="brand-section">
-        <h1 class="brand-name">${dealership.name}</h1>
-        <div class="brand-sub">${dealership.tagline}</div>
-        <div class="brand-info">
-          ${dealership.address}<br />
-          ${dealership.city}, ${dealership.state} - ${dealership.pinCode}<br />
-          Phone: ${dealership.phone} | Email: ${dealership.email}<br />
-          GSTIN: <strong>${dealership.gstin || '27AABCP1234F1Z8'}</strong> | PAN: <strong>${dealership.pan || 'AABCP1234F'}</strong> | State Code: <strong>${dealership.stateCode || '27'}</strong>
+        <img class="brand-logo-img" src="${PATEL_MOTORS_LOGO_DATA_URI}" alt="Patel Motors Logo" />
+        <div class="brand-text-block">
+          <h1 class="brand-name">${dealership.name}</h1>
+          <div class="brand-sub">${dealership.tagline}</div>
+          <div class="brand-info">
+            ${dealership.address}<br />
+            ${dealership.city}, ${dealership.state} - ${dealership.pinCode}<br />
+            Phone: ${dealership.phone} | Email: ${dealership.email}<br />
+            GSTIN: <strong>${dealership.gstin || '27AABCP1234F1Z8'}</strong> | PAN: <strong>${dealership.pan || 'AABCP1234F'}</strong> | State Code: <strong>${dealership.stateCode || '27'}</strong>
+          </div>
         </div>
       </div>
       <div class="invoice-header-meta">
@@ -719,12 +792,10 @@ export function printInvoice(bike: Vehicle, sale: SaleRecord): void {
 }
 
 export function generateDeliveryNoteNumber(bike?: Partial<Vehicle>): string {
-  const currentYear = new Date().getFullYear();
-  const nextYearShort = String(currentYear + 1).slice(-2);
-  const finYear = `${currentYear}-${nextYearShort}`;
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  const bikePrefix = bike?.make ? bike.make.substring(0, 3).toUpperCase() : 'MOT';
-  return `PM/DN/${finYear}/${bikePrefix}-${randomSuffix}`;
+  const finYear = getIndianFinancialYear();
+  const bikePrefix = getBrandPrefix(bike?.make);
+  const suffix = getLogicalVoucherSuffix('DN', bike);
+  return `PM/DN/${finYear}/${bikePrefix}-${suffix}`;
 }
 
 export function generateDeliveryNoteHtml(
@@ -732,17 +803,34 @@ export function generateDeliveryNoteHtml(
   acquisition: AcquisitionRecord, 
   dealership: DealershipInfo = PATEL_MOTORS_DEALERSHIP
 ): string {
-  const purchasePriceFormatted = formatPrice(acquisition.purchaseAmount);
-  const amountWords = numberToWordsIndian(acquisition.purchaseAmount);
+  const purchasePrice = Number(acquisition.purchaseAmount) || 0;
+  const purchasePriceFormatted = formatPrice(purchasePrice);
+  const isSettled = acquisition.settlementStatus === 'Fully Settled' || Boolean(acquisition.settlementDate && (acquisition.balanceDue === 0 || !acquisition.balanceDue));
+  const hasBalancePending = !isSettled && (acquisition.hasBalancePending || (acquisition.balanceDue !== undefined && acquisition.balanceDue > 0));
+  
+  const balanceDue = hasBalancePending ? (acquisition.balanceDue || 0) : 0;
+  const amountPaid = acquisition.amountPaid !== undefined 
+    ? acquisition.amountPaid 
+    : (hasBalancePending ? Math.max(0, purchasePrice - balanceDue) : purchasePrice);
+    
+  const amountWords = numberToWordsIndian(purchasePrice);
   const deliveryTime = acquisition.handoverTime || '11:00 AM IST';
   const deliveryDate = acquisition.acquisitionDate || new Date().toISOString().split('T')[0];
+
+  const docTitle = isSettled 
+    ? 'Final Settlement Acquisition Voucher & Undertaking' 
+    : (hasBalancePending ? 'Vehicle Acquisition Note (Balance Holdback)' : 'Vehicle Delivery Note & Undertaking');
+
+  const statusText = isSettled
+    ? 'Full Amount Settled'
+    : (hasBalancePending ? `Balance Pending: ${formatPrice(balanceDue)}` : (acquisition.paymentStatus || 'Paid in Full (Disbursed)'));
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vehicle Acquisition & Delivery Note #${acquisition.deliveryNoteNumber} - ${dealership.name}</title>
+  <title>${docTitle} #${acquisition.deliveryNoteNumber} - ${dealership.name}</title>
   <style>
     @page { 
       size: A4 portrait; 
@@ -778,6 +866,20 @@ export function generateDeliveryNoteHtml(
     }
     .brand-section {
       flex: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .brand-logo-img {
+      height: 60px;
+      width: auto;
+      border-radius: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.14);
+      border: 1px solid #140908;
+    }
+    .brand-text-block {
+      flex: 1;
     }
     .brand-name {
       font-size: 26px;
@@ -804,18 +906,18 @@ export function generateDeliveryNoteHtml(
     }
     .invoice-header-meta {
       text-align: right;
-      min-width: 220px;
+      min-width: 240px;
     }
     .doc-badge {
       display: inline-block;
-      background: #0f172a;
+      background: ${isSettled ? '#15803d' : (hasBalancePending ? '#b45309' : '#0f172a')};
       color: #ffffff;
-      font-size: 9.5px;
+      font-size: 9px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
       padding: 4px 10px;
-      border-radius: 2px;
+      border-radius: 3px;
       margin-bottom: 6px;
     }
     .invoice-no {
@@ -836,12 +938,13 @@ export function generateDeliveryNoteHtml(
       display: inline-block;
       font-weight: 800;
       font-size: 10px;
-      padding: 2px 8px;
+      padding: 2.5px 8px;
       border-radius: 3px;
       text-transform: uppercase;
       margin-top: 4px;
-      background: #dcfce7;
-      color: #15803d;
+      background: ${isSettled ? '#dcfce7' : (hasBalancePending ? '#fef3c7' : '#dcfce7')};
+      color: ${isSettled ? '#15803d' : (hasBalancePending ? '#b45309' : '#15803d')};
+      border: 1px solid ${isSettled ? '#86efac' : (hasBalancePending ? '#fde68a' : '#86efac')};
     }
 
     /* 2 Columns: Seller & Bike */
@@ -992,6 +1095,58 @@ export function generateDeliveryNoteHtml(
       border-bottom: 1px dashed #e2e8f0;
       padding-bottom: 4px;
     }
+    .total-row.pending-alert {
+      color: #b45309;
+      font-weight: 800;
+      font-size: 11px;
+      background: #fef3c7;
+      padding: 4px 6px;
+      border-radius: 3px;
+      margin-top: 4px;
+    }
+
+    /* Special Balance Note & Settlement Boxes */
+    .balance-note-box {
+      background: #fffbeb;
+      border: 1.5px dashed #f59e0b;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 10px;
+      color: #92400e;
+    }
+    .balance-note-title {
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 9px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #b45309;
+      margin-bottom: 4px;
+    }
+
+    .settlement-receipt-box {
+      background: #f0fdf4;
+      border: 1.5px solid #22c55e;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 10px;
+      color: #14532d;
+    }
+    .settlement-receipt-title {
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 9px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #15803d;
+      margin-bottom: 4px;
+    }
 
     /* Terms & Undertaking */
     .terms-box {
@@ -1058,22 +1213,66 @@ export function generateDeliveryNoteHtml(
     <!-- Header -->
     <div class="top-bar">
       <div class="brand-section">
-        <h1 class="brand-name">${dealership.name}</h1>
-        <div class="brand-sub">Two-Wheeler Acquisition & Delivery Challan</div>
-        <div class="brand-info">
-          ${dealership.address}, ${dealership.city} - ${dealership.pinCode}<br />
-          Phone: ${dealership.phone} | Email: ${dealership.email}<br />
-          GSTIN: <strong>${dealership.gstin}</strong> | PAN: <strong>${dealership.pan}</strong> | State: <strong>${dealership.stateCode}</strong>
+        <img class="brand-logo-img" src="${PATEL_MOTORS_LOGO_DATA_URI}" alt="Patel Motors Logo" />
+        <div class="brand-text-block">
+          <h1 class="brand-name">${dealership.name}</h1>
+          <div class="brand-sub">${isSettled ? 'Settled Acquisition Invoice & Final Clearance' : 'Two-Wheeler Acquisition & Delivery Challan'}</div>
+          <div class="brand-info">
+            ${dealership.address}, ${dealership.city} - ${dealership.pinCode}<br />
+            Phone: ${dealership.phone} | Email: ${dealership.email}<br />
+            GSTIN: <strong>${dealership.gstin}</strong> | PAN: <strong>${dealership.pan}</strong> | State: <strong>${dealership.stateCode}</strong>
+          </div>
         </div>
       </div>
       <div class="invoice-header-meta">
-        <div class="doc-badge">Vehicle Delivery Note & Undertaking</div>
+        <div class="doc-badge">${docTitle}</div>
         <div class="invoice-no">#${acquisition.deliveryNoteNumber}</div>
         <div class="meta-line">Date of Handover: <strong>${deliveryDate}</strong></div>
         <div class="meta-line">Time of Handover: <strong>${deliveryTime}</strong></div>
-        <div class="status-pill">${acquisition.paymentStatus || 'Disbursed / Settled'}</div>
+        ${isSettled && acquisition.settlementDate ? `<div class="meta-line">Settlement Date: <strong>${acquisition.settlementDate}</strong></div>` : ''}
+        <div class="status-pill">${statusText}</div>
       </div>
     </div>
+
+    <!-- Settlement / Holdback Notice Banner if applicable -->
+    ${hasBalancePending ? `
+    <div class="balance-note-box">
+      <div class="balance-note-title">
+        ⚠️ Document Holdback & Balance Payment Terms
+      </div>
+      <div>
+        An amount of <strong>${formatPrice(balanceDue)}</strong> is withheld by Patel Motors from the total agreed consideration of <strong>${purchasePriceFormatted}</strong> pending handover of the remaining vehicle documents.
+      </div>
+      ${acquisition.balancePaymentNote ? `
+      <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #fde68a;">
+        <strong>Document / Holdback Condition:</strong> ${acquisition.balancePaymentNote}
+      </div>` : ''}
+      ${acquisition.pendingDocuments && acquisition.pendingDocuments.length > 0 ? `
+      <div style="margin-top: 3px; font-weight: 600;">
+        Pending Documents: ${acquisition.pendingDocuments.join(', ')}
+      </div>` : ''}
+      <div style="margin-top: 4px; font-size: 9px; color: #78350f;">
+        Upon verification and receipt of all pending documents, the remaining balance of ${formatPrice(balanceDue)} will be disbursed to the seller, and a Final Settled Inward Invoice will be generated.
+      </div>
+    </div>` : ''}
+
+    ${isSettled ? `
+    <div class="settlement-receipt-box">
+      <div class="settlement-receipt-title">
+        ✓ Official Clearance & Full Settlement Endorsement
+      </div>
+      <div>
+        All pending vehicle documents have been verified and received from the seller (${acquisition.sellerName}). The outstanding balance payment has been disbursed in full on <strong>${acquisition.settlementDate || deliveryDate}</strong>.
+      </div>
+      <div style="margin-top: 4px; font-family: monospace; font-size: 9.5px;">
+        Balance Payment Mode: <strong>${acquisition.settlementPaymentMethod || 'Bank Transfer (NEFT/RTGS)'}</strong>
+        ${acquisition.settlementPaymentRef ? ` | Ref / UTR: <strong>${acquisition.settlementPaymentRef}</strong>` : ''}
+      </div>
+      ${acquisition.settlementNote ? `
+      <div style="margin-top: 3px; font-style: italic;">
+        Settlement Remarks: ${acquisition.settlementNote}
+      </div>` : ''}
+    </div>` : ''}
 
     <!-- 2 Column Particulars -->
     <div class="party-grid">
@@ -1095,12 +1294,12 @@ export function generateDeliveryNoteHtml(
           <div class="spec-table">
             <div>Reg No: <strong>${bike.registration || 'N/A'}</strong></div>
             <div>Odo: <strong>${Number(bike.mileage || 0).toLocaleString('en-IN')} KM</strong></div>
-            <div>Chassis: <span>${bike.chassisNumber || 'Verified'}</span></div>
-            <div>Engine: <span>${bike.engineNumber || 'Verified'}</span></div>
+            <div>Chassis: <strong>${bike.chassisNumber || 'Verified'}</strong></div>
+            <div>Engine: <strong>${bike.engineNumber || 'Verified'}</strong></div>
             <div>Ownership: <span>${bike.ownership || '1st Owner'}</span></div>
             <div>Fuel: <span>${bike.fuelType || 'Petrol'}</span></div>
             <div>Keys Received: <strong>${acquisition.keysCount || 2} Keys</strong></div>
-            <div>RC Book: <strong>${acquisition.originalRcReceived !== false ? 'Original Received' : 'Pending'}</strong></div>
+            <div>RC Book: <strong>${acquisition.originalRcReceived !== false || isSettled ? 'Original Received' : 'Pending from Seller'}</strong></div>
           </div>
         </div>
       </div>
@@ -1121,7 +1320,7 @@ export function generateDeliveryNoteHtml(
           <td>
             <div class="item-name">${bike.make || ''} ${bike.model || ''} ${bike.variant || ''}</div>
             <div class="item-desc">
-              Physical handover of motorcycle in roadworthy condition with complete set of original documents, keys, and signed RTO transfer forms (Forms 29 & 30).
+              Physical handover of motorcycle in verified roadworthy condition with keys, title verification, and signed RTO transfer forms (Forms 29 & 30).
             </div>
           </td>
           <td class="center" style="font-family: monospace;">${bike.year || ''}</td>
@@ -1135,11 +1334,15 @@ export function generateDeliveryNoteHtml(
     <div class="settlement-grid">
       <div class="payment-details">
         <div class="info-title">Settlement & Documentation Handover Checklist</div>
-        <div>Payment Mode: <strong>${acquisition.paymentMethod}</strong></div>
-        ${acquisition.paymentRef ? `<div>Ref / Cheque / UTR: <strong style="font-family: monospace;">${acquisition.paymentRef}</strong></div>` : ''}
+        <div>Initial Payment Mode: <strong>${acquisition.paymentMethod}</strong></div>
+        ${acquisition.paymentRef ? `<div>Handover Ref / UTR: <strong style="font-family: monospace;">${acquisition.paymentRef}</strong></div>` : ''}
+        ${isSettled && acquisition.settlementPaymentMethod ? `
+        <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+          Balance Cleared Via: <strong>${acquisition.settlementPaymentMethod}</strong> ${acquisition.settlementPaymentRef ? `(Ref: ${acquisition.settlementPaymentRef})` : ''}
+        </div>` : ''}
         
         <div class="checklist-grid">
-          <div class="check-item">${acquisition.originalRcReceived !== false ? '☑' : '☐'} Original RC Book</div>
+          <div class="check-item">${acquisition.originalRcReceived !== false || isSettled ? '☑' : '☐'} Original RC Book</div>
           <div class="check-item">${acquisition.rtoFormsSigned !== false ? '☑' : '☐'} RTO Forms 29 & 30 Signed</div>
           <div class="check-item">${acquisition.insuranceCopyReceived !== false ? '☑' : '☐'} Valid Insurance Policy</div>
           <div class="check-item">${acquisition.pucValid !== false ? '☑' : '☐'} Valid PUC Certificate</div>
@@ -1148,7 +1351,7 @@ export function generateDeliveryNoteHtml(
         </div>
 
         <div class="amount-words-box">
-          Amount in Words:<br />
+          Total Consideration in Words:<br />
           <div class="amount-words-val">${amountWords}</div>
         </div>
       </div>
@@ -1158,6 +1361,39 @@ export function generateDeliveryNoteHtml(
           <span>Agreed Purchase Price:</span>
           <span>${purchasePriceFormatted}</span>
         </div>
+        ${hasBalancePending ? `
+        <div class="total-row">
+          <span>Amount Paid at Handover:</span>
+          <span>${formatPrice(amountPaid)}</span>
+        </div>
+        <div class="total-row pending-alert">
+          <span>Balance Withheld for Docs:</span>
+          <span>${formatPrice(balanceDue)}</span>
+        </div>
+        <div class="total-row highlight">
+          <span>Net Disbursed so far:</span>
+          <span>${formatPrice(amountPaid)}</span>
+        </div>
+        <div class="total-row" style="font-size: 9px; color: #b45309; margin-top: 4px;">
+          <span>Status:</span>
+          <span>PARTIAL (BALANCE PENDING)</span>
+        </div>` : isSettled ? `
+        <div class="total-row">
+          <span>Initial Handover Advance:</span>
+          <span>${formatPrice(amountPaid)}</span>
+        </div>
+        <div class="total-row settled">
+          <span>Balance Disbursed (${acquisition.settlementDate || 'Settled'}):</span>
+          <span>${formatPrice(Math.max(0, purchasePrice - amountPaid))}</span>
+        </div>
+        <div class="total-row highlight">
+          <span>Total Net Disbursed:</span>
+          <span>${purchasePriceFormatted}</span>
+        </div>
+        <div class="total-row" style="font-size: 9.5px; color: #15803d; margin-top: 4px;">
+          <span>Seller Balance Due:</span>
+          <span>NIL (Fully Settled)</span>
+        </div>` : `
         <div class="total-row settled">
           <span>Settlement Status:</span>
           <span>${acquisition.paymentStatus || 'Paid in Full'}</span>
@@ -1169,13 +1405,19 @@ export function generateDeliveryNoteHtml(
         <div class="total-row" style="font-size: 9.5px; color: #15803d; margin-top: 4px;">
           <span>Seller Balance Due:</span>
           <span>NIL (Fully Settled)</span>
-        </div>
+        </div>`}
       </div>
     </div>
 
     <!-- Legal Undertaking -->
     <div class="terms-box">
-      <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We (${acquisition.sellerName}) hereby confirm having sold and delivered physical possession of the above motorcycle to Patel Motors. I solemnly affirm that I am the sole registered owner, that the vehicle has a clean title, and is completely free of any police seizure, criminal case, unpaid e-challans, or undisclosed finance liens. I have received the full agreed purchase price of ${purchasePriceFormatted}. From this handover date (${deliveryDate}) and time (${deliveryTime}), Patel Motors assumes physical custody of the motorcycle.
+      <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We (${acquisition.sellerName}) hereby confirm having sold and delivered physical possession of the above motorcycle to Patel Motors. I solemnly affirm that I am the sole registered owner, that the vehicle has a clean title, and is completely free of any police seizure, criminal case, unpaid e-challans, or undisclosed finance liens. 
+      ${isSettled 
+        ? `I have received the entire full agreed purchase price of ${purchasePriceFormatted} in full settlement.` 
+        : (hasBalancePending 
+            ? `I have received an initial payment of ${formatPrice(amountPaid)}. The remaining balance of ${formatPrice(balanceDue)} shall be paid to me upon delivery of the agreed remaining documents (${acquisition.balancePaymentNote || 'as noted above'}).`
+            : `I have received the full agreed purchase price of ${purchasePriceFormatted}.`)} 
+      From this handover date (${deliveryDate}) and time (${deliveryTime}), Patel Motors assumes physical custody of the motorcycle.
     </div>
 
     <!-- Dual Signatures -->

@@ -6,6 +6,7 @@ import { Search, Plus, Edit, Trash2, AlertTriangle, FileText, CheckCircle2, Eye,
 import { useVehicles } from '../../context/VehicleContext';
 import { SmartImage, VEHICLE_PLACEHOLDER_FALLBACK } from '../../components/SmartImage';
 import { generateInvoiceNumber, printInvoice, generateInvoiceHtml, numberToWordsIndian, PATEL_MOTORS_DEALERSHIP, printDeliveryNote } from '../../lib/invoice';
+import { PatelMotorsLogo } from '../../components/PatelMotorsLogo';
 
 export default function AdminInventory() {
   const { vehicles, updateVehicle, removeVehicle } = useVehicles();
@@ -16,8 +17,22 @@ export default function AdminInventory() {
   // Modals state
   const [bikeToDelete, setBikeToDelete] = useState<Vehicle | null>(null);
   const [bikeToSell, setBikeToSell] = useState<Vehicle | null>(null);
+  const [bikeToSettle, setBikeToSettle] = useState<Vehicle | null>(null);
   const [previewInvoiceBike, setPreviewInvoiceBike] = useState<{ bike: Vehicle; sale: SaleRecord } | null>(null);
   const [previewDeliveryNoteBike, setPreviewDeliveryNoteBike] = useState<{ bike: Vehicle; acquisition: AcquisitionRecord } | null>(null);
+
+  // Settlement Form State for "Settle Balance & Generate Final Settled Invoice"
+  const [settlementFormData, setSettlementFormData] = useState({
+    settlementDate: new Date().toISOString().split('T')[0],
+    settlementPaymentMethod: 'Bank Transfer (NEFT/RTGS)',
+    settlementPaymentRef: '',
+    settlementAmount: 0,
+    settlementNote: '',
+    rcReceived: true,
+    nocReceived: true,
+    formsReceived: true,
+    keysReceived: true
+  });
 
   // Sale form state for "Mark as Sold & Generate Invoice"
   const [saleFormData, setSaleFormData] = useState({
@@ -40,6 +55,63 @@ export default function AdminInventory() {
     amountPaid: 0,
     notes: ''
   });
+
+  const handleOpenSettleModal = (bike: Vehicle) => {
+    const acq = bike.acquisitionInfo;
+    const total = acq?.purchaseAmount || bike.purchasePrice || 0;
+    const bal = acq?.balanceDue !== undefined && acq.balanceDue > 0 ? acq.balanceDue : (total - (acq?.amountPaid || 0));
+    setBikeToSettle(bike);
+    setSettlementFormData({
+      settlementDate: new Date().toISOString().split('T')[0],
+      settlementPaymentMethod: 'Bank Transfer (NEFT/RTGS)',
+      settlementPaymentRef: '',
+      settlementAmount: bal,
+      settlementNote: acq?.balancePaymentNote 
+        ? `Documents received as per agreed terms: "${acq.balancePaymentNote}". Balance settled.` 
+        : 'All pending seller documents received and verified. Full balance payment disbursed.',
+      rcReceived: true,
+      nocReceived: true,
+      formsReceived: true,
+      keysReceived: true
+    });
+  };
+
+  const handleConfirmBalanceSettlement = async () => {
+    if (!bikeToSettle || !bikeToSettle.acquisitionInfo) return;
+
+    const acq = bikeToSettle.acquisitionInfo;
+    const totalAmt = acq.purchaseAmount || bikeToSettle.purchasePrice || 0;
+
+    const updatedAcq: AcquisitionRecord = {
+      ...acq,
+      purchaseAmount: totalAmt,
+      amountPaid: totalAmt,
+      balanceDue: 0,
+      hasBalancePending: false,
+      paymentStatus: 'Paid in Full',
+      settlementStatus: 'Fully Settled',
+      settlementDate: settlementFormData.settlementDate,
+      settlementPaymentMethod: settlementFormData.settlementPaymentMethod,
+      settlementPaymentRef: settlementFormData.settlementPaymentRef.trim() || undefined,
+      settlementNote: settlementFormData.settlementNote.trim() || 'All documents received and balance cleared.',
+      originalRcReceived: settlementFormData.rcReceived,
+      rtoFormsSigned: settlementFormData.formsReceived,
+      settledDeliveryNoteNumber: acq.deliveryNoteNumber
+    };
+
+    await updateVehicle(bikeToSettle.id, {
+      acquisitionInfo: updatedAcq
+    });
+
+    const settledBike: Vehicle = { ...bikeToSettle, acquisitionInfo: updatedAcq };
+    setBikeToSettle(null);
+
+    // Automatically pop open the Settled Delivery Note / Inward Invoice Modal
+    setPreviewDeliveryNoteBike({
+      bike: settledBike,
+      acquisition: updatedAcq
+    });
+  };
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter(v => {
@@ -351,9 +423,24 @@ export default function AdminInventory() {
                     {/* Cost of Acquisition / Purchase Price */}
                     <td className="px-5 py-4 font-mono">
                       {bike.purchasePrice ? (
-                        <span className="text-zinc-400 text-xs font-medium">
-                          {formatPrice(bike.purchasePrice)}
-                        </span>
+                        <div>
+                          <span className="text-zinc-400 text-xs font-medium">
+                            {formatPrice(bike.purchasePrice)}
+                          </span>
+                          {bike.acquisitionInfo?.balanceDue && bike.acquisitionInfo.balanceDue > 0 && bike.acquisitionInfo.settlementStatus !== 'Fully Settled' ? (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center gap-1 text-[8.5px] font-mono font-bold uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                                Holdback: {formatPrice(bike.acquisitionInfo.balanceDue)}
+                              </span>
+                            </div>
+                          ) : bike.acquisitionInfo?.settlementStatus === 'Fully Settled' ? (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center gap-1 text-[8.5px] font-mono font-bold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                                Fully Settled
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
                       ) : (
                         <span className="text-zinc-600 text-[10px] uppercase font-mono tracking-wider">—</span>
                       )}
@@ -390,7 +477,19 @@ export default function AdminInventory() {
                     {/* Action buttons */}
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
-                        {/* Sell & Generate Invoice Action */}
+                        {/* Settle Balance Button if acquired bike has a pending balance holdback */}
+                        {bike.acquisitionInfo?.balanceDue && bike.acquisitionInfo.balanceDue > 0 && bike.acquisitionInfo.settlementStatus !== 'Fully Settled' && (
+                          <button
+                            onClick={() => handleOpenSettleModal(bike)}
+                            className="inline-flex items-center px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/40 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                            title="Settle Pending Balance to Seller & Generate Settled Inward Invoice"
+                          >
+                            <DollarSign className="w-3.5 h-3.5 mr-1" />
+                            <span>Settle Balance</span>
+                          </button>
+                        )}
+
+                        {/* Sell & Generate Customer Invoice Action */}
                         {!isSold ? (
                           <button
                             onClick={() => handleOpenSellModal(bike)}
@@ -418,22 +517,26 @@ export default function AdminInventory() {
                               setPreviewInvoiceBike({ bike, sale: saleRec });
                             }}
                             className="inline-flex items-center px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all"
-                            title="View / Print Invoice"
+                            title="View / Print Customer Selling Invoice"
                           >
                             <FileText className="w-3.5 h-3.5 mr-1" />
                             <span>Invoice</span>
                           </button>
                         )}
 
-                        {/* Delivery Note Action if Acquired with Delivery Note */}
+                        {/* Inward Acquisition Delivery Note / Settled Invoice Action */}
                         {bike.acquisitionInfo && (
                           <button
                             onClick={() => setPreviewDeliveryNoteBike({ bike, acquisition: bike.acquisitionInfo! })}
-                            className="inline-flex items-center px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer"
-                            title="View / Print Inward Delivery Note (Dealer Confidential)"
+                            className={`inline-flex items-center px-2.5 py-1.5 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                              bike.acquisitionInfo.settlementStatus === 'Fully Settled'
+                                ? 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10'
+                            }`}
+                            title={bike.acquisitionInfo.settlementStatus === 'Fully Settled' ? 'View Final Settled Inward Invoice' : 'View Inward Delivery Note'}
                           >
                             <FileCheck className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-                            <span>Delivery Note</span>
+                            <span>{bike.acquisitionInfo.settlementStatus === 'Fully Settled' ? 'Settled Invoice' : 'Delivery Note'}</span>
                           </button>
                         )}
 
@@ -509,7 +612,14 @@ export default function AdminInventory() {
                       {bike.year} • {bike.bodyType || 'Bike'} • {bike.mileage.toLocaleString('en-IN')} KM
                     </p>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <span className="text-[9.5px] font-mono text-zinc-400 truncate">{bike.registration || "Reg: N/A"}</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="text-[9.5px] font-mono text-zinc-400 truncate">{bike.registration || "Reg: N/A"}</span>
+                        {bike.acquisitionInfo?.balanceDue && bike.acquisitionInfo.balanceDue > 0 && bike.acquisitionInfo.settlementStatus !== 'Fully Settled' && (
+                          <span className="px-1.5 py-0.2 rounded text-[7.5px] font-mono font-bold uppercase bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                            Hold: {formatPrice(bike.acquisitionInfo.balanceDue)}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs font-bold text-white shrink-0">{formatPrice(bike.price)}</span>
                     </div>
                   </div>
@@ -517,48 +627,66 @@ export default function AdminInventory() {
 
                 {/* Compact Mobile Action Bar */}
                 <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-white/[0.04]">
-                  {!isSold ? (
-                    <button
-                      onClick={() => handleOpenSellModal(bike)}
-                      className="py-1 px-2.5 bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white border border-orange-500/30 rounded-lg text-[9.5px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1"
-                    >
-                      <DollarSign className="w-3 h-3" />
-                      <span>Sell & Bill</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        const saleRec: SaleRecord = bike.saleInfo || {
-                          invoiceNumber: generateInvoiceNumber(bike),
-                          saleDate: new Date().toISOString().split('T')[0],
-                          salePrice: bike.price,
-                          finalAmount: bike.price,
-                          customerName: "Valued Customer",
-                          customerPhone: "+91 98201 12345",
-                          paymentMethod: "Bank Transfer (NEFT/RTGS)",
-                          paymentStatus: "Paid in Full",
-                          amountPaid: bike.price,
-                          balanceDue: 0
-                        };
-                        setPreviewInvoiceBike({ bike, sale: saleRec });
-                      }}
-                      className="py-1 px-2.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 rounded-lg text-[9.5px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1"
-                    >
-                      <FileText className="w-3 h-3" />
-                      <span>Invoice</span>
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {/* Settle Balance Button if acquired bike has a pending balance holdback */}
+                    {bike.acquisitionInfo?.balanceDue && bike.acquisitionInfo.balanceDue > 0 && bike.acquisitionInfo.settlementStatus !== 'Fully Settled' && (
+                      <button
+                        onClick={() => handleOpenSettleModal(bike)}
+                        className="py-1 px-2 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/40 rounded-lg text-[9px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm"
+                        title="Settle Pending Balance to Seller"
+                      >
+                        <DollarSign className="w-3 h-3" />
+                        <span>Settle</span>
+                      </button>
+                    )}
 
-                  {bike.acquisitionInfo && (
-                    <button
-                      onClick={() => setPreviewDeliveryNoteBike({ bike, acquisition: bike.acquisitionInfo! })}
-                      className="py-1 px-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 rounded-lg text-[9px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
-                      title="View Inward Delivery Note"
-                    >
-                      <FileCheck className="w-3 h-3 text-emerald-400" />
-                      <span>Delivery Note</span>
-                    </button>
-                  )}
+                    {!isSold ? (
+                      <button
+                        onClick={() => handleOpenSellModal(bike)}
+                        className="py-1 px-2.5 bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white border border-orange-500/30 rounded-lg text-[9.5px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                      >
+                        <DollarSign className="w-3 h-3" />
+                        <span>Sell & Bill</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const saleRec: SaleRecord = bike.saleInfo || {
+                            invoiceNumber: generateInvoiceNumber(bike),
+                            saleDate: new Date().toISOString().split('T')[0],
+                            salePrice: bike.price,
+                            finalAmount: bike.price,
+                            customerName: "Valued Customer",
+                            customerPhone: "+91 98201 12345",
+                            paymentMethod: "Bank Transfer (NEFT/RTGS)",
+                            paymentStatus: "Paid in Full",
+                            amountPaid: bike.price,
+                            balanceDue: 0
+                          };
+                          setPreviewInvoiceBike({ bike, sale: saleRec });
+                        }}
+                        className="py-1 px-2.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 rounded-lg text-[9.5px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                      >
+                        <FileText className="w-3 h-3" />
+                        <span>Invoice</span>
+                      </button>
+                    )}
+
+                    {bike.acquisitionInfo && (
+                      <button
+                        onClick={() => setPreviewDeliveryNoteBike({ bike, acquisition: bike.acquisitionInfo! })}
+                        className={`py-1 px-2 rounded-lg text-[9px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                          bike.acquisitionInfo.settlementStatus === 'Fully Settled'
+                            ? 'bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10'
+                        }`}
+                        title={bike.acquisitionInfo.settlementStatus === 'Fully Settled' ? 'View Final Settled Inward Invoice' : 'View Inward Delivery Note'}
+                      >
+                        <FileCheck className="w-3 h-3 text-emerald-400" />
+                        <span>{bike.acquisitionInfo.settlementStatus === 'Fully Settled' ? 'Settled Invoice' : 'Delivery Note'}</span>
+                      </button>
+                    )}
+                  </div>
 
                   <div className="flex items-center space-x-1 shrink-0">
                     <button
@@ -975,15 +1103,18 @@ export default function AdminInventory() {
             <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
-                <div>
-                  <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
-                  <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
-                    Buy, Sell & Exchange Premium Pre-Owned Two Wheelers
-                  </div>
-                  <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
-                    Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
-                    Phone: +91 98196 55210 | Email: sales@patelmotors.in<br />
-                    GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <PatelMotorsLogo className="h-12 sm:h-16 w-auto shrink-0 shadow-sm" />
+                  <div>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
+                    <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
+                      Buy, Sell & Exchange Premium Pre-Owned Two Wheelers
+                    </div>
+                    <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
+                      Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
+                      Phone: +91 98196 55210 | Email: sales@patelmotors.in<br />
+                      GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                    </div>
                   </div>
                 </div>
                 <div className="text-left sm:text-right font-mono shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-zinc-200">
@@ -1243,26 +1374,47 @@ export default function AdminInventory() {
             <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
-                <div>
-                  <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
-                  <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
-                    Two-Wheeler Acquisition & Delivery Challan
-                  </div>
-                  <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
-                    Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
-                    Phone: +91 93205 56671 | Email: sales@patelmotors.in<br />
-                    GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <PatelMotorsLogo className="h-12 sm:h-16 w-auto shrink-0 shadow-sm" />
+                  <div>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
+                    <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
+                      Two-Wheeler Acquisition & Delivery Challan
+                    </div>
+                    <div className="text-[9.5px] sm:text-[11px] text-zinc-600 mt-1 leading-snug">
+                      Basement 2, Kohinoor Square, East Tower, N C. Kelkar Rd, Ram Ganesh Gadkari Chowk, Dadar West, Mumbai - 400028<br />
+                      Phone: +91 93205 56671 | Email: sales@patelmotors.in<br />
+                      GSTIN: <strong className="font-mono text-zinc-800">27AABCP1234F1Z8</strong> | PAN: <strong className="font-mono text-zinc-800">AABCP1234F</strong> | State: <strong>27 (Maharashtra)</strong>
+                    </div>
                   </div>
                 </div>
                 <div className="text-left sm:text-right font-mono shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-zinc-200">
-                  <div className="inline-block bg-black text-white text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1">
-                    Vehicle Delivery Note & Undertaking
+                  <div className={`inline-block text-white text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mb-1 ${
+                    previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled'
+                      ? 'bg-emerald-700'
+                      : previewDeliveryNoteBike.acquisition.hasBalancePending
+                      ? 'bg-amber-600'
+                      : 'bg-black'
+                  }`}>
+                    {previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled'
+                      ? 'Settled Inward Acquisition Invoice'
+                      : previewDeliveryNoteBike.acquisition.hasBalancePending
+                      ? 'Delivery Note (Balance Withheld)'
+                      : 'Vehicle Delivery Note & Undertaking'}
                   </div>
                   <div className="font-bold text-xs sm:text-sm text-black">#{previewDeliveryNoteBike.acquisition.deliveryNoteNumber}</div>
                   <div className="text-zinc-600 text-[9.5px] sm:text-[11px] mt-0.5">Date: {previewDeliveryNoteBike.acquisition.acquisitionDate}</div>
                   <div className="text-zinc-600 text-[9.5px] sm:text-[11px]">Time: {previewDeliveryNoteBike.acquisition.handoverTime || '11:30 AM IST'}</div>
-                  <div className="font-bold text-[9.5px] sm:text-[11px] mt-0.5 text-emerald-700">
-                    Status: {previewDeliveryNoteBike.acquisition.paymentStatus || 'Paid in Full'}
+                  <div className={`font-bold text-[9.5px] sm:text-[11px] mt-0.5 ${
+                    previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled'
+                      ? 'text-emerald-700'
+                      : previewDeliveryNoteBike.acquisition.hasBalancePending
+                      ? 'text-amber-700'
+                      : 'text-zinc-700'
+                  }`}>
+                    Status: {previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled' 
+                      ? 'Fully Settled & Cleared' 
+                      : (previewDeliveryNoteBike.acquisition.paymentStatus || 'Paid in Full')}
                   </div>
                 </div>
               </div>
@@ -1347,13 +1499,31 @@ export default function AdminInventory() {
                   </div>
                   <div className="space-y-1 mt-1 text-zinc-700">
                     <div className="flex justify-between">
-                      <span>Payment Method:</span>
+                      <span>Initial Payment Method:</span>
                       <strong>{previewDeliveryNoteBike.acquisition.paymentMethod}</strong>
                     </div>
                     {previewDeliveryNoteBike.acquisition.paymentRef && (
                       <div className="flex justify-between">
-                        <span>Transaction Ref / UTR:</span>
+                        <span>Payment Ref / UTR:</span>
                         <strong className="font-mono">{previewDeliveryNoteBike.acquisition.paymentRef}</strong>
+                      </div>
+                    )}
+                    {previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled' && (
+                      <div className="p-1.5 bg-emerald-50 border border-emerald-200 rounded text-[9.5px] text-emerald-800 space-y-0.5 mt-1">
+                        <div className="font-bold flex justify-between">
+                          <span>Balance Settled On:</span>
+                          <span>{previewDeliveryNoteBike.acquisition.settlementDate || 'Confirmed'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Final Method:</span>
+                          <span>{previewDeliveryNoteBike.acquisition.settlementPaymentMethod || 'Bank Transfer'}</span>
+                        </div>
+                        {previewDeliveryNoteBike.acquisition.settlementPaymentRef && (
+                          <div className="flex justify-between font-mono">
+                            <span>Ref/UTR:</span>
+                            <span>{previewDeliveryNoteBike.acquisition.settlementPaymentRef}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-1 pt-1.5 border-t border-dashed border-zinc-200 text-[9.5px]">
@@ -1376,23 +1546,85 @@ export default function AdminInventory() {
                     <span>Agreed Purchase Consideration:</span>
                     <span>{formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}</span>
                   </div>
-                  <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
-                    <span>Total Net Disbursed:</span>
-                    <span>{formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
-                    <span>Seller Balance Due:</span>
-                    <span>NIL (Fully Settled)</span>
-                  </div>
-                  <div className="text-[9px] text-zinc-500 pt-1 font-sans">
-                    Status: <strong className="text-emerald-700">{previewDeliveryNoteBike.acquisition.paymentStatus || 'Paid in Full'}</strong>
-                  </div>
+                  {previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled' ? (
+                    <>
+                      <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
+                        <span>Total Net Disbursed:</span>
+                        <span>{formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
+                        <span>Seller Balance Due:</span>
+                        <span>NIL (Fully Settled)</span>
+                      </div>
+                      <div className="text-[9px] text-emerald-800 pt-1 font-sans bg-emerald-50 p-1 rounded font-bold">
+                        ✓ Full Purchase Consideration Disbursed & Received
+                      </div>
+                    </>
+                  ) : previewDeliveryNoteBike.acquisition.hasBalancePending && (previewDeliveryNoteBike.acquisition.balanceDue || 0) > 0 ? (
+                    <>
+                      <div className="flex justify-between text-zinc-700">
+                        <span>Paid at Handover:</span>
+                        <span>{formatPrice(previewDeliveryNoteBike.acquisition.amountPaid || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-amber-700 font-bold bg-amber-50 p-1 rounded">
+                        <span>Balance Withheld:</span>
+                        <span>{formatPrice(previewDeliveryNoteBike.acquisition.balanceDue || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1 text-black">
+                        <span>Net Paid so far:</span>
+                        <span>{formatPrice(previewDeliveryNoteBike.acquisition.amountPaid || 0)}</span>
+                      </div>
+                      <div className="text-[9px] text-amber-800 pt-1 font-sans">
+                        Status: <strong>Balance Pending for Documents</strong>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-[11px] sm:text-xs font-black border-t-2 border-zinc-900 pt-1.5 text-black">
+                        <span>Total Net Disbursed:</span>
+                        <span>{formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 font-bold text-[9.5px] sm:text-[10px]">
+                        <span>Seller Balance Due:</span>
+                        <span>NIL (Fully Settled)</span>
+                      </div>
+                      <div className="text-[9px] text-zinc-500 pt-1 font-sans">
+                        Status: <strong className="text-emerald-700">{previewDeliveryNoteBike.acquisition.paymentStatus || 'Paid in Full'}</strong>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
+              {/* Holdback Note in Preview */}
+              {previewDeliveryNoteBike.acquisition.balancePaymentNote && previewDeliveryNoteBike.acquisition.settlementStatus !== 'Fully Settled' && (
+                <div className="bg-amber-50 border border-amber-300 rounded-lg p-2.5 mb-3 text-[9.5px] text-amber-900">
+                  <strong className="block text-[10px] uppercase font-mono tracking-wider text-amber-800 mb-0.5">
+                    ⚠️ Balance Holdback Condition:
+                  </strong>
+                  {previewDeliveryNoteBike.acquisition.balancePaymentNote}
+                </div>
+              )}
+
+              {/* Settlement Note in Preview if settled */}
+              {previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled' && previewDeliveryNoteBike.acquisition.settlementNote && (
+                <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-2.5 mb-3 text-[9.5px] text-emerald-900">
+                  <strong className="block text-[10px] uppercase font-mono tracking-wider text-emerald-800 mb-0.5">
+                    ✓ Balance Settlement & Document Verification Note:
+                  </strong>
+                  {previewDeliveryNoteBike.acquisition.settlementNote}
+                </div>
+              )}
+
               {/* Legal Seller Undertaking */}
               <div className="border-t border-zinc-200 pt-2 text-[8.5px] sm:text-[9px] text-zinc-500 leading-relaxed">
-                <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We ({previewDeliveryNoteBike.acquisition.sellerName}) hereby confirm having sold and delivered physical possession of the motorcycle to Patel Motors. I solemnly affirm that I am the registered lawful owner, that the vehicle has a clear title with no pending police complaints, e-challans, or undisclosed finance liens. I have received the full agreed purchase price of {formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}. From this handover date and time, Patel Motors assumes physical custody of the motorcycle.
+                <strong>Seller Handover Undertaking & Title Warranty:</strong> I/We ({previewDeliveryNoteBike.acquisition.sellerName}) hereby confirm having sold and delivered physical possession of the motorcycle to Patel Motors. I solemnly affirm that I am the registered lawful owner, that the vehicle has a clear title with no pending police complaints, e-challans, or undisclosed finance liens. 
+                {previewDeliveryNoteBike.acquisition.settlementStatus === 'Fully Settled' 
+                  ? ` I acknowledge receipt of the complete full agreed consideration of ${formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}, including the settled balance on ${previewDeliveryNoteBike.acquisition.settlementDate || 'today'}. No balance remains due.`
+                  : previewDeliveryNoteBike.acquisition.hasBalancePending && (previewDeliveryNoteBike.acquisition.balanceDue || 0) > 0
+                  ? ` I have received an initial payment of ${formatPrice(previewDeliveryNoteBike.acquisition.amountPaid || 0)}. The balance of ${formatPrice(previewDeliveryNoteBike.acquisition.balanceDue || 0)} is to be disbursed upon delivery of agreed documents (${previewDeliveryNoteBike.acquisition.balancePaymentNote || 'as agreed'}).`
+                  : ` I have received the full agreed purchase price of ${formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}.`} 
+                From this handover date and time, Patel Motors assumes physical custody of the motorcycle.
               </div>
 
               {/* Dual Signatures */}
@@ -1407,6 +1639,252 @@ export default function AdminInventory() {
                   <div className="font-bold text-black uppercase">For PATEL MOTORS</div>
                   <div className="text-[8.5px] sm:text-[9px]">Authorized Signatory</div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* SETTLE BALANCE PAYMENT & GENERATE SETTLED INVOICE MODAL */}
+      {bikeToSettle && bikeToSettle.acquisitionInfo && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
+          <div 
+            onClick={() => setBikeToSettle(null)} 
+            className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity" 
+          />
+          <div className="bg-zinc-950 border border-amber-500/30 rounded-2xl sm:rounded-3xl p-4 sm:p-7 max-w-2xl w-full relative z-10 shadow-2xl max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-white/10 mb-4 sm:mb-6">
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold block">
+                  Inward Vehicle Settlement
+                </span>
+                <h3 className="text-lg sm:text-xl font-serif font-bold text-white uppercase tracking-wider mt-0.5">
+                  Settle Balance & Generate Final Invoice
+                </h3>
+              </div>
+              <button 
+                onClick={() => setBikeToSettle(null)}
+                className="p-1.5 sm:p-2 text-zinc-400 hover:text-white bg-zinc-900/60 rounded-full border border-white/10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Selected Bike Summary */}
+            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3 sm:p-4 mb-4 sm:mb-5 flex items-center space-x-3 sm:space-x-4">
+              <div className="w-14 h-12 sm:w-16 sm:h-12 rounded-lg border border-white/10 overflow-hidden shrink-0 bg-black/60">
+                <SmartImage 
+                  src={bikeToSettle.images?.[0] || ""} 
+                  fallbackSrc={VEHICLE_PLACEHOLDER_FALLBACK}
+                  alt="" 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-white text-sm sm:text-base truncate">
+                  {bikeToSettle.year} {bikeToSettle.make} {bikeToSettle.model}
+                </h4>
+                <p className="text-[10px] sm:text-[11px] text-zinc-400 font-mono uppercase tracking-wider mt-0.5 truncate">
+                  Reg: {bikeToSettle.registration || 'N/A'} • Chassis: {bikeToSettle.chassisNumber || 'N/A'} • Engine: {bikeToSettle.engineNumber || 'N/A'}
+                </p>
+                <p className="text-[9.5px] text-amber-400 font-mono mt-0.5">
+                  Seller: <strong>{bikeToSettle.acquisitionInfo.sellerName}</strong> ({bikeToSettle.acquisitionInfo.sellerPhone}) • Note #{bikeToSettle.acquisitionInfo.deliveryNoteNumber}
+                </p>
+              </div>
+            </div>
+
+            {/* Current Financial Status Breakdown */}
+            <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3.5 mb-5 space-y-2">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-amber-400 font-bold">
+                Balance Payment Status & Withhold Note
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center font-mono">
+                <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+                  <div className="text-[9px] text-zinc-400 uppercase">Agreed Total</div>
+                  <div className="text-xs sm:text-sm font-bold text-white">
+                    {formatPrice(bikeToSettle.acquisitionInfo.purchaseAmount || bikeToSettle.purchasePrice || 0)}
+                  </div>
+                </div>
+                <div className="bg-black/40 p-2 rounded-lg border border-white/5">
+                  <div className="text-[9px] text-zinc-400 uppercase">Paid at Handover</div>
+                  <div className="text-xs sm:text-sm font-bold text-emerald-400">
+                    {formatPrice(bikeToSettle.acquisitionInfo.amountPaid || 0)}
+                  </div>
+                </div>
+                <div className="bg-amber-500/20 p-2 rounded-lg border border-amber-500/40">
+                  <div className="text-[9px] text-amber-300 uppercase font-bold">Balance Due</div>
+                  <div className="text-xs sm:text-sm font-black text-amber-300">
+                    {formatPrice(bikeToSettle.acquisitionInfo.balanceDue || 0)}
+                  </div>
+                </div>
+              </div>
+
+              {bikeToSettle.acquisitionInfo.balancePaymentNote && (
+                <div className="mt-2 pt-2 border-t border-amber-500/20 text-[10.5px] text-amber-200">
+                  <span className="font-bold uppercase text-[9px] text-amber-400 block font-mono">Original Balance Holdback Note:</span>
+                  "{bikeToSettle.acquisitionInfo.balancePaymentNote}"
+                </div>
+              )}
+            </div>
+
+            {/* Settlement Details Form */}
+            <div className="space-y-4">
+              <div className="text-xs uppercase font-mono tracking-wider text-white font-bold border-b border-white/10 pb-1.5 flex items-center justify-between">
+                <span>Final Settlement & Document Verification</span>
+                <span className="text-[10px] text-emerald-400 font-normal">Settle Balance & Mark Fully Settled</span>
+              </div>
+
+              {/* Document verification checkboxes */}
+              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-2">
+                <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold mb-1">
+                  Documents Received from Seller (Check all received)
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <label className="flex items-center space-x-2.5 p-2 bg-black/40 rounded-lg border border-white/5 cursor-pointer hover:border-emerald-500/40 transition-colors">
+                    <input 
+                      type="checkbox"
+                      checked={settlementFormData.rcReceived}
+                      onChange={e => setSettlementFormData(prev => ({ ...prev, rcReceived: e.target.checked }))}
+                      className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                    />
+                    <span className="text-zinc-200 text-xs">Original RC Smart Card / Book</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2.5 p-2 bg-black/40 rounded-lg border border-white/5 cursor-pointer hover:border-emerald-500/40 transition-colors">
+                    <input 
+                      type="checkbox"
+                      checked={settlementFormData.formsReceived}
+                      onChange={e => setSettlementFormData(prev => ({ ...prev, formsReceived: e.target.checked }))}
+                      className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                    />
+                    <span className="text-zinc-200 text-xs">RTO Forms 29 & 30 (Signed)</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2.5 p-2 bg-black/40 rounded-lg border border-white/5 cursor-pointer hover:border-emerald-500/40 transition-colors">
+                    <input 
+                      type="checkbox"
+                      checked={settlementFormData.nocReceived}
+                      onChange={e => setSettlementFormData(prev => ({ ...prev, nocReceived: e.target.checked }))}
+                      className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                    />
+                    <span className="text-zinc-200 text-xs">Bank NOC / Clearance (if any)</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2.5 p-2 bg-black/40 rounded-lg border border-white/5 cursor-pointer hover:border-emerald-500/40 transition-colors">
+                    <input 
+                      type="checkbox"
+                      checked={settlementFormData.keysReceived}
+                      onChange={e => setSettlementFormData(prev => ({ ...prev, keysReceived: e.target.checked }))}
+                      className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                    />
+                    <span className="text-zinc-200 text-xs">Both Original Keys Received</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Settlement payment fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9.5px] sm:text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                    Settlement Date
+                  </label>
+                  <input 
+                    type="date"
+                    value={settlementFormData.settlementDate}
+                    onChange={e => setSettlementFormData(prev => ({ ...prev, settlementDate: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs text-white outline-none focus:border-emerald-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9.5px] sm:text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                    Balance Amount Disbursed (₹)
+                  </label>
+                  <input 
+                    type="number"
+                    value={settlementFormData.settlementAmount}
+                    onChange={e => setSettlementFormData(prev => ({ ...prev, settlementAmount: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs text-emerald-400 outline-none focus:border-emerald-500 font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9.5px] sm:text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                    Settlement Payment Method
+                  </label>
+                  <select 
+                    value={settlementFormData.settlementPaymentMethod}
+                    onChange={e => setSettlementFormData(prev => ({ ...prev, settlementPaymentMethod: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs text-white outline-none focus:border-emerald-500 font-mono"
+                  >
+                    <option>Bank Transfer (NEFT/RTGS)</option>
+                    <option>UPI / IMPS</option>
+                    <option>Cheque</option>
+                    <option>Cash</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9.5px] sm:text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                    Transaction Ref / UTR Number
+                  </label>
+                  <input 
+                    type="text"
+                    placeholder="e.g. UTR / NEFT / IMPS Ref ID"
+                    value={settlementFormData.settlementPaymentRef}
+                    onChange={e => setSettlementFormData(prev => ({ ...prev, settlementPaymentRef: e.target.value }))}
+                    className="w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs text-white outline-none focus:border-emerald-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Settlement note */}
+              <div>
+                <label className="block text-[9.5px] sm:text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-1">
+                  Settlement & Verification Remarks (Printed on Final Invoice)
+                </label>
+                <textarea 
+                  rows={2}
+                  value={settlementFormData.settlementNote}
+                  onChange={e => setSettlementFormData(prev => ({ ...prev, settlementNote: e.target.value }))}
+                  placeholder="e.g. Received original RC and signed forms from seller. Full balance payment disbursed."
+                  className="w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs text-white outline-none focus:border-emerald-500 font-mono resize-none"
+                />
+              </div>
+
+              {/* Settlement calculation confirmation */}
+              <div className="p-3 bg-emerald-950/30 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs font-mono">
+                <div>
+                  <span className="text-zinc-400 uppercase text-[9.5px] block">New Outstanding Balance:</span>
+                  <span className="text-emerald-400 font-bold">₹0 (NIL - FULLY SETTLED)</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-zinc-400 uppercase text-[9.5px] block">Total Cleared:</span>
+                  <span className="text-sm font-black text-white">
+                    {formatPrice(bikeToSettle.acquisitionInfo.purchaseAmount || bikeToSettle.purchasePrice || 0)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setBikeToSettle(null)}
+                  className="flex-1 px-4 py-2.5 sm:py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-mono uppercase font-bold tracking-wider transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmBalanceSettlement}
+                  className="flex-1 px-4 py-2.5 sm:py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-mono uppercase font-bold tracking-wider shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <FileCheck className="w-4 h-4" />
+                  <span>Confirm Settlement & Generate Settled Invoice</span>
+                </button>
               </div>
             </div>
           </div>
