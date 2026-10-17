@@ -2,11 +2,47 @@ import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { formatPrice, Vehicle, BIKE_TYPES, VehicleStatus, SaleRecord, AcquisitionRecord } from '../../data/mockData';
-import { Search, Plus, Edit, Trash2, AlertTriangle, FileText, CheckCircle2, Eye, EyeOff, Bookmark, Archive, Printer, X, DollarSign, Clock, ShieldCheck, FileCheck } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, AlertTriangle, FileText, CheckCircle2, Eye, EyeOff, Bookmark, Archive, Printer, X, DollarSign, Clock, ShieldCheck, FileCheck, RotateCcw } from 'lucide-react';
 import { useVehicles } from '../../context/VehicleContext';
 import { SmartImage, VEHICLE_PLACEHOLDER_FALLBACK } from '../../components/SmartImage';
 import { generateInvoiceNumber, printInvoice, generateInvoiceHtml, numberToWordsIndian, PATEL_MOTORS_DEALERSHIP, printDeliveryNote } from '../../lib/invoice';
 import { PatelMotorsLogo } from '../../components/PatelMotorsLogo';
+
+export function getArchiveStatus(bike: Vehicle): {
+  isArchived: boolean;
+  isExpired: boolean;
+  daysRemaining: number;
+  formattedExpiry: string;
+  formattedArchivedDate: string;
+} {
+  const isArchived = bike.status === 'Archived' || (bike.status === 'Sold' && Boolean(bike.saleInfo));
+  if (!isArchived) {
+    return { isArchived: false, isExpired: false, daysRemaining: 0, formattedExpiry: '', formattedArchivedDate: '' };
+  }
+
+  const archiveDateStr = bike.archivedAt || bike.saleInfo?.saleDate;
+  const archiveTime = archiveDateStr ? new Date(archiveDateStr).getTime() : Date.now();
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const expiryTime = bike.archivedUntil ? new Date(bike.archivedUntil).getTime() : (archiveTime + thirtyDaysMs);
+
+  const msRemaining = expiryTime - Date.now();
+  const daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
+  const isExpired = msRemaining <= 0;
+
+  const formattedExpiry = new Date(expiryTime).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const formattedArchivedDate = new Date(archiveTime).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  return { isArchived: true, isExpired, daysRemaining, formattedExpiry, formattedArchivedDate };
+}
 
 export default function AdminInventory() {
   const { vehicles, updateVehicle, removeVehicle } = useVehicles();
@@ -117,7 +153,16 @@ export default function AdminInventory() {
     return vehicles.filter(v => {
       const textToSearch = `${v.make} ${v.model} ${v.variant || ''} ${v.bodyType || ''} ${v.registration || ''}`.toLowerCase();
       const matchesSearch = textToSearch.includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'All Statuses' || v.status === statusFilter;
+      
+      let matchesStatus = true;
+      if (statusFilter === 'All Statuses') {
+        matchesStatus = true;
+      } else if (statusFilter === 'Archived' || statusFilter === 'Archives (30 Days)') {
+        matchesStatus = v.status === 'Archived' || (v.status === 'Sold' && Boolean(v.saleInfo));
+      } else {
+        matchesStatus = v.status === statusFilter;
+      }
+
       const matchesCategory = categoryFilter === 'All Categories' || v.bodyType === categoryFilter;
       return matchesSearch && matchesStatus && matchesCategory;
     });
@@ -131,7 +176,7 @@ export default function AdminInventory() {
       draft: vehicles.filter(v => v.status === 'Draft').length,
       reserved: vehicles.filter(v => v.status === 'Reserved' || v.status === 'Booked').length,
       sold: vehicles.filter(v => v.status === 'Sold').length,
-      archived: vehicles.filter(v => v.status === 'Archived').length
+      archived: vehicles.filter(v => v.status === 'Archived' || (v.status === 'Sold' && Boolean(v.saleInfo))).length
     };
   }, [vehicles]);
 
@@ -205,15 +250,24 @@ export default function AdminInventory() {
       notes: saleFormData.notes.trim() || undefined
     };
 
-    // Update status to Sold and persist sale record.
+    const now = new Date();
+    const archivedAt = now.toISOString();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const archivedUntil = new Date(now.getTime() + thirtyDaysMs).toISOString();
+
+    // Shift bike to archives after sell & bill (accessible for 1 month / 30 days)
     updateVehicle(bikeToSell.id, {
-      status: 'Sold',
+      status: 'Archived',
+      archivedAt,
+      archivedUntil,
       saleInfo: saleRecord
     });
 
     const soldBikeSnapshot: Vehicle = {
       ...bikeToSell,
-      status: 'Sold',
+      status: 'Archived',
+      archivedAt,
+      archivedUntil,
       saleInfo: saleRecord
     };
 
@@ -237,8 +291,14 @@ export default function AdminInventory() {
   };
 
   const handleToggleArchive = (bike: Vehicle) => {
-    const nextStatus: VehicleStatus = bike.status === 'Archived' ? 'Draft' : 'Archived';
-    updateVehicle(bike.id, { status: nextStatus });
+    const isCurrentlyArchived = bike.status === 'Archived';
+    const now = new Date();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    updateVehicle(bike.id, { 
+      status: isCurrentlyArchived ? 'Draft' : 'Archived',
+      archivedAt: isCurrentlyArchived ? undefined : now.toISOString(),
+      archivedUntil: isCurrentlyArchived ? undefined : new Date(now.getTime() + thirtyDaysMs).toISOString()
+    });
   };
 
   return (
@@ -260,8 +320,8 @@ export default function AdminInventory() {
         </div>
       </div>
 
-      {/* Status Summary Counter Cards - Clean responsive grid on mobile */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+      {/* Status Summary Counter Cards - Clean responsive grid on mobile and desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
         <button 
           onClick={() => setStatusFilter('All Statuses')}
           className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all ${
@@ -286,6 +346,21 @@ export default function AdminInventory() {
             <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-1 animate-pulse shrink-0"></span> Available
           </div>
           <div className="text-base sm:text-xl font-bold font-serif text-white mt-0.5 sm:mt-1">{stats.available}</div>
+        </button>
+
+        <button 
+          onClick={() => setStatusFilter('Archived')}
+          className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all ${
+            statusFilter === 'Archived' 
+              ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-md ring-1 ring-cyan-400/50' 
+              : 'bg-zinc-950/60 border-white/5 text-zinc-400 hover:border-white/20'
+          }`}
+          title="Bikes shifted to archives after sell & bill (Accessible for 1 month / 30 days)"
+        >
+          <div className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-semibold flex items-center truncate">
+            <Archive className="w-3 h-3 mr-1 shrink-0" /> Archives (30d)
+          </div>
+          <div className="text-base sm:text-xl font-bold font-serif text-white mt-0.5 sm:mt-1">{stats.archived}</div>
         </button>
 
         <button 
@@ -314,7 +389,7 @@ export default function AdminInventory() {
 
         <button 
           onClick={() => setStatusFilter('Draft')}
-          className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all col-span-2 sm:col-span-1 ${
+          className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all ${
             statusFilter === 'Draft' 
               ? 'bg-zinc-800 border-zinc-500 text-white shadow-md' 
               : 'bg-zinc-950/60 border-white/5 text-zinc-400 hover:border-white/20'
@@ -348,10 +423,10 @@ export default function AdminInventory() {
             >
               <option className="bg-zinc-950 text-white">All Statuses</option>
               <option className="bg-zinc-950 text-orange-400">Available</option>
+              <option value="Archived" className="bg-zinc-950 text-cyan-400">Archives (30 Days)</option>
               <option className="bg-zinc-950 text-amber-400">Reserved</option>
               <option className="bg-zinc-950 text-purple-400">Sold</option>
               <option className="bg-zinc-950 text-zinc-400">Draft</option>
-              <option className="bg-zinc-950 text-zinc-500">Archived</option>
             </select>
 
             <select 
@@ -366,6 +441,21 @@ export default function AdminInventory() {
             </select>
           </div>
         </div>
+
+        {/* Archive 30-Day Policy Alert Banner */}
+        {statusFilter === 'Archived' && (
+          <div className="px-4 py-3 bg-cyan-950/40 border-b border-cyan-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-cyan-300 font-mono">
+            <div className="flex items-center gap-2">
+              <Archive className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span>
+                <strong>Archive Vault (30-Day Access Policy):</strong> Sold and billed motorcycles remain accessible here for 1 month with customer selling invoices, delivery challans, and settlement history.
+              </span>
+            </div>
+            <span className="text-[10px] text-cyan-300 bg-cyan-500/15 px-2.5 py-0.5 rounded border border-cyan-500/30 whitespace-nowrap font-bold">
+              {stats.archived} {stats.archived === 1 ? 'Motorcycle' : 'Motorcycles'} in Archive
+            </span>
+          </div>
+        )}
 
         {/* Desktop Table View */}
         <div className="hidden lg:block overflow-x-auto">
@@ -387,6 +477,8 @@ export default function AdminInventory() {
                 const isDraft = bike.status === 'Draft';
                 const isReserved = bike.status === 'Reserved' || bike.status === 'Booked';
                 const isArchived = bike.status === 'Archived';
+                const hasSale = isSold || isArchived || Boolean(bike.saleInfo);
+                const archiveInfo = getArchiveStatus(bike);
 
                 return (
                   <tr key={bike.id} className="hover:bg-white/[0.03] transition-colors">
@@ -453,7 +545,7 @@ export default function AdminInventory() {
 
                     {/* Lifecycle Status Pill */}
                     <td className="px-5 py-4">
-                      <div className="inline-flex items-center space-x-1.5">
+                      <div className="inline-flex flex-col space-y-1">
                         <select 
                           value={bike.status}
                           onChange={(e) => updateVehicle(bike.id, { status: e.target.value as any })}
@@ -462,6 +554,7 @@ export default function AdminInventory() {
                             isSold ? 'border-purple-500/50 text-purple-400 bg-purple-500/10' :
                             isReserved ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' :
                             isDraft ? 'border-zinc-700 text-zinc-300 bg-zinc-900/60' :
+                            isArchived ? 'border-cyan-500/50 text-cyan-400 bg-cyan-500/10' :
                             'border-zinc-800 text-zinc-500 bg-zinc-950'
                           }`}
                         >
@@ -469,8 +562,25 @@ export default function AdminInventory() {
                           <option value="Draft" className="bg-zinc-950 text-zinc-300">Draft (Hidden)</option>
                           <option value="Reserved" className="bg-zinc-950 text-amber-400">Reserved</option>
                           <option value="Sold" className="bg-zinc-950 text-purple-400">Sold</option>
-                          <option value="Archived" className="bg-zinc-950 text-zinc-500">Archived</option>
+                          <option value="Archived" className="bg-zinc-950 text-cyan-400">Archived (30-day Vault)</option>
                         </select>
+                        {isArchived && (
+                          <div 
+                            className={`flex items-center gap-1 font-mono text-[9px] px-2 py-0.5 rounded border ${
+                              archiveInfo.isExpired 
+                                ? 'text-red-400 bg-red-500/10 border-red-500/30' 
+                                : 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30'
+                            }`}
+                            title={`Archived on ${archiveInfo.formattedArchivedDate}. 30-day access valid till ${archiveInfo.formattedExpiry}`}
+                          >
+                            <Clock className="w-2.5 h-2.5 shrink-0" />
+                            <span>
+                              {archiveInfo.isExpired 
+                                ? 'Expired (30d over)' 
+                                : `${archiveInfo.daysRemaining}d left (till ${archiveInfo.formattedExpiry})`}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </td>
 
@@ -490,21 +600,21 @@ export default function AdminInventory() {
                         )}
 
                         {/* Sell & Generate Customer Invoice Action */}
-                        {!isSold ? (
+                        {!hasSale ? (
                           <button
                             onClick={() => handleOpenSellModal(bike)}
                             className="inline-flex items-center px-2.5 py-1.5 bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white border border-orange-500/30 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all"
-                            title="Sell Bike & Generate Invoice"
+                            title="Sell Bike, Generate Invoice & Shift to Archives"
                           >
                             <DollarSign className="w-3.5 h-3.5 mr-1" />
-                            <span>Mark Sold</span>
+                            <span>Sell & Bill</span>
                           </button>
                         ) : (
                           <button
                             onClick={() => {
                               const saleRec: SaleRecord = bike.saleInfo || {
                                 invoiceNumber: generateInvoiceNumber(bike),
-                                saleDate: new Date().toISOString().split('T')[0],
+                                saleDate: bike.archivedAt?.split('T')[0] || new Date().toISOString().split('T')[0],
                                 salePrice: bike.price,
                                 finalAmount: bike.price,
                                 customerName: "Valued Customer",
@@ -516,11 +626,23 @@ export default function AdminInventory() {
                               };
                               setPreviewInvoiceBike({ bike, sale: saleRec });
                             }}
-                            className="inline-flex items-center px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all"
-                            title="View / Print Customer Selling Invoice"
+                            className="inline-flex items-center px-2.5 py-1.5 bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all shadow-sm"
+                            title="View / Print Customer Selling Invoice (Archived)"
                           >
-                            <FileText className="w-3.5 h-3.5 mr-1" />
+                            <FileText className="w-3.5 h-3.5 mr-1 text-cyan-400" />
                             <span>Invoice</span>
+                          </button>
+                        )}
+
+                        {/* Restore from Archive button if bike is archived */}
+                        {isArchived && (
+                          <button
+                            onClick={() => handleToggleArchive(bike)}
+                            className="inline-flex items-center px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 rounded-lg text-[10px] font-bold font-mono uppercase tracking-wider transition-all"
+                            title="Restore motorcycle from archives to Draft inventory"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                            <span>Restore</span>
                           </button>
                         )}
 
@@ -539,7 +661,6 @@ export default function AdminInventory() {
                             <span>{bike.acquisitionInfo.settlementStatus === 'Fully Settled' ? 'Settled Invoice' : 'Delivery Note'}</span>
                           </button>
                         )}
-
 
                         {/* Quick Publish / Unpublish */}
                         <button
@@ -585,6 +706,9 @@ export default function AdminInventory() {
           {filteredVehicles.map(bike => {
             const isAvailable = bike.status === 'Available';
             const isSold = bike.status === 'Sold';
+            const isArchived = bike.status === 'Archived';
+            const hasSale = isSold || isArchived || Boolean(bike.saleInfo);
+            const archiveInfo = getArchiveStatus(bike);
 
             return (
               <div key={bike.id} className="p-2.5 sm:p-3.5 space-y-2">
@@ -602,10 +726,11 @@ export default function AdminInventory() {
                       <p className="font-bold text-white text-xs truncate max-w-[170px]">{bike.make} {bike.model}</p>
                       <span className={`px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-wider border shrink-0 ${
                         isAvailable ? 'border-orange-500/50 text-orange-400 bg-orange-500/10' :
+                        isArchived ? 'border-cyan-500/50 text-cyan-400 bg-cyan-500/10' :
                         isSold ? 'border-purple-500/50 text-purple-400 bg-purple-500/10' :
                         'border-zinc-700 text-zinc-400 bg-zinc-900'
                       }`}>
-                        {bike.status}
+                        {isArchived ? 'Archived (30d)' : bike.status}
                       </span>
                     </div>
                     <p className="text-[9.5px] text-zinc-400 mt-0.5 font-mono uppercase tracking-wider truncate">
@@ -622,12 +747,22 @@ export default function AdminInventory() {
                       </div>
                       <span className="text-xs font-bold text-white shrink-0">{formatPrice(bike.price)}</span>
                     </div>
+                    {isArchived && (
+                      <div className="mt-1 flex items-center gap-1 font-mono text-[8.5px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded">
+                        <Clock className="w-2.5 h-2.5 shrink-0" />
+                        <span>
+                          {archiveInfo.isExpired 
+                            ? 'Archive Expired' 
+                            : `${archiveInfo.daysRemaining}d left in archive (till ${archiveInfo.formattedExpiry})`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Compact Mobile Action Bar */}
                 <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-white/[0.04]">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     {/* Settle Balance Button if acquired bike has a pending balance holdback */}
                     {bike.acquisitionInfo?.balanceDue && bike.acquisitionInfo.balanceDue > 0 && bike.acquisitionInfo.settlementStatus !== 'Fully Settled' && (
                       <button
@@ -640,10 +775,11 @@ export default function AdminInventory() {
                       </button>
                     )}
 
-                    {!isSold ? (
+                    {!hasSale ? (
                       <button
                         onClick={() => handleOpenSellModal(bike)}
                         className="py-1 px-2.5 bg-orange-600/20 hover:bg-orange-600 text-orange-300 hover:text-white border border-orange-500/30 rounded-lg text-[9.5px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                        title="Sell Bike, Generate Invoice & Shift to Archives"
                       >
                         <DollarSign className="w-3 h-3" />
                         <span>Sell & Bill</span>
@@ -653,7 +789,7 @@ export default function AdminInventory() {
                         onClick={() => {
                           const saleRec: SaleRecord = bike.saleInfo || {
                             invoiceNumber: generateInvoiceNumber(bike),
-                            saleDate: new Date().toISOString().split('T')[0],
+                            saleDate: bike.archivedAt?.split('T')[0] || new Date().toISOString().split('T')[0],
                             salePrice: bike.price,
                             finalAmount: bike.price,
                             customerName: "Valued Customer",
@@ -665,10 +801,22 @@ export default function AdminInventory() {
                           };
                           setPreviewInvoiceBike({ bike, sale: saleRec });
                         }}
-                        className="py-1 px-2.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 rounded-lg text-[9.5px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                        className="py-1 px-2.5 bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded-lg text-[9.5px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm"
+                        title="View / Print Customer Selling Invoice (Archived)"
                       >
-                        <FileText className="w-3 h-3" />
+                        <FileText className="w-3 h-3 text-cyan-400" />
                         <span>Invoice</span>
+                      </button>
+                    )}
+
+                    {isArchived && (
+                      <button
+                        onClick={() => handleToggleArchive(bike)}
+                        className="py-1 px-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 rounded-lg text-[9px] font-bold font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                        title="Restore motorcycle to inventory"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Restore</span>
                       </button>
                     )}
 
@@ -1038,6 +1186,14 @@ export default function AdminInventory() {
                     {formatPrice(Math.max(0, Number(saleFormData.salePrice) + Number(saleFormData.rtoCharges || 0) - Number(saleFormData.discount || 0)))}
                   </span>
                 </div>
+
+                {/* 30-Day Archival Policy Notice */}
+                <div className="mt-3 p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-xl text-cyan-300 text-xs font-mono flex items-start sm:items-center gap-2.5">
+                  <Archive className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5 sm:mt-0" />
+                  <span className="text-[11px] leading-relaxed">
+                    <strong>1-Month Archive Shift:</strong> Once billed, this motorcycle will automatically shift to <strong>Archives</strong> and remain accessible for <strong>30 days (1 month)</strong> with complete invoice reprinting and customer history.
+                  </span>
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -1054,8 +1210,8 @@ export default function AdminInventory() {
                   onClick={handleConfirmSaleAndInvoice}
                   className="flex-1 px-4 py-2.5 sm:py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-mono uppercase font-bold tracking-wider shadow-lg shadow-orange-900/30 transition-all flex items-center justify-center gap-1.5"
                 >
-                  <FileText className="w-4 h-4" />
-                  <span>Generate Invoice & Mark Sold</span>
+                  <Archive className="w-4 h-4" />
+                  <span>Sell & Bill (Shift to Archives)</span>
                 </button>
               </div>
             </div>
@@ -1074,9 +1230,17 @@ export default function AdminInventory() {
           <div className="relative z-10 w-full max-w-4xl my-2 sm:my-8 bg-zinc-950 border border-white/20 rounded-xl sm:rounded-3xl p-2.5 sm:p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/10 mb-3 sm:mb-4">
               <div>
-                <span className="text-[9px] sm:text-[9.5px] font-mono text-orange-400 uppercase tracking-widest font-bold block">
-                  Official Sale Receipt & Delivery Challan
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] sm:text-[9.5px] font-mono text-orange-400 uppercase tracking-widest font-bold block">
+                    Official Sale Receipt & Delivery Challan
+                  </span>
+                  {getArchiveStatus(previewInvoiceBike.bike).isArchived && (
+                    <span className="inline-flex items-center gap-1 text-[8.5px] font-mono font-bold uppercase text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 rounded">
+                      <Archive className="w-2.5 h-2.5" />
+                      Archive Vault ({getArchiveStatus(previewInvoiceBike.bike).daysRemaining}d left)
+                    </span>
+                  )}
+                </div>
                 <h3 className="text-sm sm:text-xl font-serif font-bold text-white uppercase tracking-wider mt-0.5 truncate max-w-[190px] sm:max-w-md">
                   #{previewInvoiceBike.sale.invoiceNumber}
                 </h3>
@@ -1103,8 +1267,8 @@ export default function AdminInventory() {
             <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <PatelMotorsLogo className="h-12 sm:h-16 w-auto shrink-0 shadow-sm" />
+                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                  <PatelMotorsLogo className="h-12 sm:h-14 w-auto aspect-[500/280] shrink-0 shadow-sm" />
                   <div>
                     <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
                     <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
@@ -1272,7 +1436,7 @@ export default function AdminInventory() {
                   </div>
                 </div>
 
-                <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
+                <div className="bg-zinc-50 p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
                   <div className="flex justify-between text-zinc-600">
                     <span>Agreed Vehicle Price:</span>
                     <span>{formatPrice(previewInvoiceBike.sale.salePrice)}</span>
@@ -1374,8 +1538,8 @@ export default function AdminInventory() {
             <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <PatelMotorsLogo className="h-12 sm:h-16 w-auto shrink-0 shadow-sm" />
+                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                  <PatelMotorsLogo className="h-12 sm:h-14 w-auto aspect-[500/280] shrink-0 shadow-sm" />
                   <div>
                     <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
                     <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
@@ -1541,7 +1705,7 @@ export default function AdminInventory() {
                   </div>
                 </div>
 
-                <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
+                <div className="bg-zinc-50 p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
                   <div className="flex justify-between text-zinc-600">
                     <span>Agreed Purchase Consideration:</span>
                     <span>{formatPrice(previewDeliveryNoteBike.acquisition.purchaseAmount || previewDeliveryNoteBike.bike.purchasePrice || 0)}</span>

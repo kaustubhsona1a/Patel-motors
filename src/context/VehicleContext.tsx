@@ -191,6 +191,8 @@ export function toDbPayload(v: any) {
   if (v.engineNumber) metaTags.push(`meta_engine_number:${v.engineNumber}`);
   if (v.saleInfo) metaTags.push(`meta_sale_info:${JSON.stringify(v.saleInfo)}`);
   if (v.acquisitionInfo) metaTags.push(`meta_acquisition_info:${JSON.stringify(v.acquisitionInfo)}`);
+  if (v.archivedAt) metaTags.push(`meta_archived_at:${v.archivedAt}`);
+  if (v.archivedUntil) metaTags.push(`meta_archived_until:${v.archivedUntil}`);
 
   const cleanFeatures = Array.isArray(v.features)
     ? v.features.filter((f: string) => typeof f === 'string' && !f.startsWith('instagram_reel:') && !f.startsWith('meta_'))
@@ -424,6 +426,8 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
         const engineNumber = v.engineNumber || v.engine_number || extractMeta('engine_number') || '';
         const saleInfo = v.saleInfo || v.sale_info || extractMeta('sale_info') || undefined;
         const acquisitionInfo = v.acquisitionInfo || v.acquisition_info || extractMeta('acquisition_info') || undefined;
+        const archivedAt = v.archivedAt || v.archived_at || extractMeta('archived_at') || undefined;
+        const archivedUntil = v.archivedUntil || v.archived_until || extractMeta('archived_until') || undefined;
 
         let features = rawFeaturesList.filter((f: any) => typeof f === 'string' && !f.startsWith('meta_') && !f.startsWith('instagram_reel:'));
         let instagramReel = v.instagram_reel || v.instagramReel || '';
@@ -475,6 +479,8 @@ export function VehicleProvider({ children }: { children: ReactNode }) {
           engineNumber,
           saleInfo,
           acquisitionInfo,
+          archivedAt,
+          archivedUntil,
           status,
           featured: v.featured !== undefined ? Boolean(v.featured) : (v.is_featured !== undefined ? Boolean(v.is_featured) : false),
           deleted,

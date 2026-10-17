@@ -6,7 +6,7 @@ export default function AdminDashboard() {
   const { vehicles, leads } = useVehicles();
 
   const activeBikes = vehicles.filter(v => v.status === 'Available').length;
-  const soldBikes = vehicles.filter(v => v.status === 'Sold').length;
+  const soldBikes = vehicles.filter(v => v.status === 'Sold' || v.status === 'Archived' || Boolean(v.saleInfo)).length;
   const totalBikes = vehicles.length;
 
   return (

@@ -1904,8 +1904,8 @@ export default function AdminAddVehicle() {
             <div className="bg-white text-zinc-900 rounded-lg sm:rounded-2xl p-3 sm:p-7 shadow-inner text-[10.5px] sm:text-xs font-sans">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-zinc-900 pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <PatelMotorsLogo className="h-12 sm:h-16 w-auto shrink-0 shadow-sm" />
+                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                  <PatelMotorsLogo className="h-12 sm:h-14 w-auto aspect-[500/280] shrink-0 shadow-sm" />
                   <div>
                     <h2 className="text-lg sm:text-2xl font-black uppercase tracking-wider text-black m-0">PATEL MOTORS</h2>
                     <div className="text-[8.5px] sm:text-[10px] uppercase font-mono tracking-widest text-orange-600 font-bold mt-0.5">
@@ -2035,7 +2035,7 @@ export default function AdminAddVehicle() {
                   </div>
                 </div>
 
-                <div className="bg-white p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
+                <div className="bg-zinc-50 p-2 sm:p-2.5 rounded-lg border border-zinc-200 space-y-1 text-[10px] sm:text-[11px] font-mono">
                   <div className="flex justify-between text-zinc-600">
                     <span>Agreed Purchase Price:</span>
                     <span>{formatPrice(Number(formData.purchasePrice) || acquisitionData.purchaseAmount || 0)}</span>

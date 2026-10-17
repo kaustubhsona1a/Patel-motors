@@ -97,9 +97,11 @@ export type Vehicle = {
   instagramReel?: string;
   inspectionNotes?: string;
   updatedAt?: number;
-  deleted?: boolean;
   acquisitionInfo?: AcquisitionRecord; // Dealer private inward purchase delivery note record
   saleInfo?: SaleRecord;
+  archivedAt?: string; // ISO timestamp when bike was shifted to archive upon sell & bill
+  archivedUntil?: string; // ISO timestamp for the 30-day (1 month) access window
+  deleted?: boolean;
 };
 
 export const MOCK_VEHICLES: Vehicle[] = [
@@ -367,6 +369,74 @@ export const MOCK_VEHICLES: Vehicle[] = [
     inspectionNotes: "Belt drive inspected with zero cracks or wear. Primary fluid and engine oil replaced with genuine HD Screamin' Eagle synth.",
     updatedAt: Date.now(),
     deleted: false
+  },
+  {
+    id: "kawasaki_z900_2022_archived",
+    make: "Kawasaki",
+    model: "Z900",
+    variant: "Metallic Spark Black ABS",
+    year: 2022,
+    registrationYear: 2022,
+    price: 840000,
+    purchasePrice: 730000,
+    mileage: 7200,
+    fuelType: "Petrol",
+    transmission: "Manual (6-Speed Assist & Slipper)",
+    bodyType: "Street / Naked",
+    engine: "948 cc Inline-4 (125 HP)",
+    engineCC: 948,
+    color: "Metallic Spark Black / Candy Lime Green",
+    ownership: "1st Owner",
+    registration: "MH-02-EZ-0900",
+    insuranceStatus: "Comprehensive (Valid till Nov 2027)",
+    rcStatus: "Valid (Andheri RTO)",
+    serviceHistory: "Kawasaki Mumbai Authorized Service",
+    condition: "Showroom Condition",
+    location: "Mumbai",
+    chassisNumber: "JKAZ900BPA019482",
+    engineNumber: "ZR900BE029183",
+    images: [
+      "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&q=80&w=1200"
+    ],
+    features: [
+      "Kawasaki Traction Control (KTRC)",
+      "Power Modes (Full / Low)",
+      "TFT Color Instrumentation",
+      "Integrated Riding Modes (Sport, Road, Rain, Rider)",
+      "LED Lighting Package"
+    ],
+    status: "Archived",
+    featured: false,
+    description: "Immaculate condition Kawasaki Z900. Sold and billed with complete RTO transfer documentation and official delivery challan.",
+    inspectionNotes: "Inspected and certified. Handover and customer delivery completed.",
+    updatedAt: Date.now() - 4 * 24 * 60 * 60 * 1000,
+    deleted: false,
+    archivedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    archivedUntil: new Date(Date.now() + 26 * 24 * 60 * 60 * 1000).toISOString(),
+    saleInfo: {
+      invoiceNumber: "PM/INV/2026-27/KAW-0900",
+      saleDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      deliveryTime: "04:30 PM IST",
+      salePrice: 840000,
+      rtoCharges: 1500,
+      taxAmount: 1500,
+      discount: 10000,
+      finalAmount: 831500,
+      customerName: "Vikramaditya Singhania",
+      customerPhone: "+91 98200 44921",
+      customerEmail: "vikram.singhania@example.com",
+      customerAddress: "Flat 1402, Sea Green Towers, Worli Sea Face, Mumbai - 400018",
+      customerIdentity: "PAN: ASRPS1294K",
+      paymentMethod: "Bank Transfer (NEFT/RTGS)",
+      paymentStatus: "Paid in Full",
+      paymentRef: "HDFC00019283749",
+      hypothecation: "Nil / Cleared",
+      insuranceCompany: "Tata AIG General Insurance",
+      amountPaid: 831500,
+      balanceDue: 0,
+      notes: "Full payment received via RTGS. Vehicle delivered with 2 keys, original RC, owner manual, and tool kit."
+    }
   }
 ];
 

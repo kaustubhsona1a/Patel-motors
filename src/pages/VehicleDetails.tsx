@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { formatPrice } from '../data/mockData';
-import { CheckCircle2, ChevronLeft, ChevronRight, MapPin, Search, Share2, Copy, Check, X, Mail, Instagram, Plus, Lock } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, MapPin, Search, Share2, Copy, Check, X, Mail, Instagram, Plus, Lock, Archive } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useVehicles } from '../context/VehicleContext';
 import { Helmet } from 'react-helmet-async';
@@ -366,8 +366,8 @@ export default function VehicleDetails() {
     if (!car) return null;
     return (
       <div className={`frost-card relative rounded-2xl shadow-xl font-sans min-w-0 ${isMobile ? 'p-4 sm:p-5' : 'p-5 lg:p-6 xl:p-8'}`}>
-        <div className={`absolute top-0 right-0 bg-white text-black font-cinzel font-bold tracking-widest uppercase ${isMobile ? 'text-[8px] px-3 py-1.5 rounded-bl-xl rounded-tr-2xl' : 'text-[9.5px] px-3.5 py-1.5 rounded-bl-xl rounded-tr-2xl'}`}>
-          Certified Motorcycle
+        <div className={`absolute top-0 right-0 ${car.status === 'Archived' ? 'bg-cyan-600 text-white' : car.status === 'Sold' ? 'bg-purple-600 text-white' : 'bg-white text-black'} font-cinzel font-bold tracking-widest uppercase ${isMobile ? 'text-[8px] px-3 py-1.5 rounded-bl-xl rounded-tr-2xl' : 'text-[9.5px] px-3.5 py-1.5 rounded-bl-xl rounded-tr-2xl'}`}>
+          {car.status === 'Archived' ? 'Sold & Archived' : car.status === 'Sold' ? 'Sold' : 'Certified Motorcycle'}
         </div>
         <h1 className={`font-cinzel font-bold text-white tracking-tight leading-tight uppercase ${isMobile ? 'text-lg mt-1' : 'text-xl sm:text-2xl mt-3'}`}>
           <span>{car.make}</span>{" "}
@@ -375,6 +375,18 @@ export default function VehicleDetails() {
         </h1>
         <p className={`tracking-widest uppercase text-zinc-300 font-sans font-semibold ${isMobile ? 'text-[9px] mt-1 mb-3' : 'text-[10px] mt-1.5 mb-4'}`}>{car.variant}</p>
         <div className={`font-bold text-white border-b border-white/15 font-cinzel ${isMobile ? 'text-xl pb-3 mb-3' : 'text-2xl sm:text-3xl pb-4 mb-4'}`}>{formatPrice(car.price)}</div>
+
+        {car.status === 'Archived' && (
+          <div className="mb-4 p-3 bg-cyan-950/60 border border-cyan-500/40 rounded-xl text-cyan-300 text-xs font-mono">
+            <div className="font-bold flex items-center gap-1.5">
+              <Archive className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Archived Motorcycle</span>
+            </div>
+            <div className="text-[10px] text-zinc-300 mt-1">
+              This motorcycle was sold & billed and shifted to archives. It is no longer available for public purchase.
+            </div>
+          </div>
+        )}
 
         {car.instagramReel && (
           <div className={`rounded-2xl bg-white/5 border border-white/15 flex flex-col ${isMobile ? 'mb-4 p-3 gap-2' : 'mb-6 p-4 gap-3'}`}>
@@ -403,13 +415,21 @@ export default function VehicleDetails() {
         </p>
 
         <div className={`space-y-2 font-sans uppercase font-bold ${isMobile ? 'text-[10px]' : 'text-[11px]'}`}>
-          <button onClick={handleCall} className={`w-full bg-white hover:bg-zinc-100 text-black rounded-full transition-all duration-300 shadow-md font-sans font-bold cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
-            Call Us ({buyPhoneDisplay})
-          </button>
-          <button onClick={handleWhatsApp} className={`w-full frost-pill text-white hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
-            <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 12.008 0c3.205.001 6.216 1.25 8.484 3.52 2.268 2.27 3.516 5.283 3.515 8.491-.005 6.655-5.344 12.003-11.95 12.003-.111 0-.221 0-.332-.005l-5.69 2.12c-.22.08-.454.04-.63-.12l-.35-.35zM6.57 17.51l.36.21c1.55.93 3.32 1.42 5.15 1.42a9.92 9.92 0 0 0 9.95-9.94c0-2.65-1.03-5.15-2.9-7.02C17.26 3.2 14.77 2.17 12.1 2.17 6.64 2.17 2.2 6.61 2.2 12.07c0 1.93.53 3.82 1.54 5.43l.23.37-1.01 3.69 3.61-.95zM17.43 14.93c-.29-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07a8.1 8.1 0 0 1-2.39-1.48 8.94 8.94 0 0 1-1.65-2.05c-.17-.3-.02-.46.13-.61.13-.13.29-.34.44-.51.15-.17.2-.29.3-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.59-.49-.51-.67-.52l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.22 3.1 1.05 1.41 1.74 1.74 3.1 2.45a9.5 9.5 0 0 0 3.7.8c1.3-.01 2.44-.45 2.74-1 .3-.53.3-1 .22-1.12-.08-.12-.3-.19-.59-.34z"/></svg>
-            Inquire via WhatsApp
-          </button>
+          {car.status !== 'Archived' ? (
+            <>
+              <button onClick={handleCall} className={`w-full bg-white hover:bg-zinc-100 text-black rounded-full transition-all duration-300 shadow-md font-sans font-bold cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
+                Call Us ({buyPhoneDisplay})
+              </button>
+              <button onClick={handleWhatsApp} className={`w-full frost-pill text-white hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
+                <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 12.008 0c3.205.001 6.216 1.25 8.484 3.52 2.268 2.27 3.516 5.283 3.515 8.491-.005 6.655-5.344 12.003-11.95 12.003-.111 0-.221 0-.332-.005l-5.69 2.12c-.22.08-.454.04-.63-.12l-.35-.35zM6.57 17.51l.36.21c1.55.93 3.32 1.42 5.15 1.42a9.92 9.92 0 0 0 9.95-9.94c0-2.65-1.03-5.15-2.9-7.02C17.26 3.2 14.77 2.17 12.1 2.17 6.64 2.17 2.2 6.61 2.2 12.07c0 1.93.53 3.82 1.54 5.43l.23.37-1.01 3.69 3.61-.95zM17.43 14.93c-.29-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07a8.1 8.1 0 0 1-2.39-1.48 8.94 8.94 0 0 1-1.65-2.05c-.17-.3-.02-.46.13-.61.13-.13.29-.34.44-.51.15-.17.2-.29.3-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.59-.49-.51-.67-.52l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.22 3.1 1.05 1.41 1.74 1.74 3.1 2.45a9.5 9.5 0 0 0 3.7.8c1.3-.01 2.44-.45 2.74-1 .3-.53.3-1 .22-1.12-.08-.12-.3-.19-.59-.34z"/></svg>
+                Inquire via WhatsApp
+              </button>
+            </>
+          ) : (
+            <div className="py-2.5 px-4 bg-zinc-900 border border-white/10 rounded-full text-center text-zinc-400 font-mono text-[10px]">
+              Archived Listing • Inquiries Closed
+            </div>
+          )}
           <button onClick={handleShare} className={`w-full frost-pill text-zinc-200 hover:text-black rounded-full transition-all duration-300 flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-98 ${isMobile ? 'py-2.5' : 'py-3'}`}>
             <Share2 className="w-3.5 h-3.5 text-white shrink-0" />
             Share Listing

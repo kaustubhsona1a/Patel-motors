@@ -1,5 +1,5 @@
 import { Vehicle, SaleRecord, AcquisitionRecord, formatPrice } from '../data/mockData';
-import { PATEL_MOTORS_LOGO_DATA_URI } from '../components/PatelMotorsLogo';
+import { PATEL_MOTORS_LOGO_DATA_URI, PATEL_MOTORS_LOGO_SVG_RAW } from '../components/PatelMotorsLogo';
 
 export interface DealershipInfo {
   name: string;
@@ -172,7 +172,7 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
   <style>
     @page { 
       size: A4 portrait; 
-      margin: 10mm; 
+      margin: 8mm; 
     }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body {
@@ -180,8 +180,8 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
       color: #0f172a;
       margin: 0;
       padding: 16px;
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 10.5px;
+      line-height: 1.35;
       background: #f8fafc;
     }
     .invoice-wrapper {
@@ -189,7 +189,7 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
       margin: 0 auto;
       background: #ffffff;
       border: 1.5px solid #0f172a;
-      padding: 24px 28px;
+      padding: 18px 22px;
       border-radius: 4px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
     }
@@ -199,22 +199,30 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 2px solid #0f172a;
-      padding-bottom: 14px;
-      margin-bottom: 14px;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      gap: 12px;
     }
     .brand-section {
       flex: 1;
       display: flex;
       align-items: flex-start;
-      gap: 16px;
+      gap: 14px;
     }
-    .brand-logo-img {
-      height: 60px;
-      width: auto;
-      border-radius: 8px;
+    .brand-logo-container {
+      height: 56px;
+      width: 100px;
+      border-radius: 6px;
       flex-shrink: 0;
+      overflow: hidden;
       box-shadow: 0 2px 6px rgba(0,0,0,0.14);
       border: 1px solid #140908;
+      background: #140908;
+    }
+    .brand-logo-container svg {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     .brand-text-block {
       flex: 1;
@@ -513,8 +521,26 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
     }
 
     @media print {
-      body { background: #ffffff; padding: 0; }
-      .invoice-wrapper { border: 1px solid #000; box-shadow: none; padding: 16px; }
+      html, body { 
+        background: #ffffff !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        -webkit-print-color-adjust: exact !important; 
+        print-color-adjust: exact !important; 
+      }
+      .invoice-wrapper { 
+        border: 1px solid #0f172a !important; 
+        box-shadow: none !important; 
+        padding: 12px 16px !important; 
+        max-width: 100% !important; 
+        margin: 0 auto !important; 
+        page-break-inside: avoid !important; 
+        break-inside: avoid !important; 
+      }
+      .top-bar, .columns-grid, .line-items-table, .bottom-split, .terms-box, .signatures-section {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
       .no-print { display: none !important; }
     }
   </style>
@@ -531,7 +557,9 @@ export function generateInvoiceHtml(bike: Vehicle, sale: SaleRecord, dealership:
     <!-- Top Dealership Header -->
     <div class="top-bar">
       <div class="brand-section">
-        <img class="brand-logo-img" src="${PATEL_MOTORS_LOGO_DATA_URI}" alt="Patel Motors Logo" />
+        <div class="brand-logo-container">
+          ${PATEL_MOTORS_LOGO_SVG_RAW}
+        </div>
         <div class="brand-text-block">
           <h1 class="brand-name">${dealership.name}</h1>
           <div class="brand-sub">${dealership.tagline}</div>
@@ -834,7 +862,7 @@ export function generateDeliveryNoteHtml(
   <style>
     @page { 
       size: A4 portrait; 
-      margin: 10mm; 
+      margin: 8mm; 
     }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body {
@@ -842,8 +870,8 @@ export function generateDeliveryNoteHtml(
       color: #0f172a;
       margin: 0;
       padding: 16px;
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 10.5px;
+      line-height: 1.35;
       background: #f8fafc;
     }
     .invoice-wrapper {
@@ -851,7 +879,7 @@ export function generateDeliveryNoteHtml(
       margin: 0 auto;
       background: #ffffff;
       border: 1.5px solid #0f172a;
-      padding: 24px 28px;
+      padding: 18px 22px;
       border-radius: 4px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
     }
@@ -861,22 +889,30 @@ export function generateDeliveryNoteHtml(
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 2px solid #0f172a;
-      padding-bottom: 14px;
-      margin-bottom: 14px;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      gap: 12px;
     }
     .brand-section {
       flex: 1;
       display: flex;
       align-items: flex-start;
-      gap: 16px;
+      gap: 14px;
     }
-    .brand-logo-img {
-      height: 60px;
-      width: auto;
-      border-radius: 8px;
+    .brand-logo-container {
+      height: 56px;
+      width: 100px;
+      border-radius: 6px;
       flex-shrink: 0;
+      overflow: hidden;
       box-shadow: 0 2px 6px rgba(0,0,0,0.14);
       border: 1px solid #140908;
+      background: #140908;
+    }
+    .brand-logo-container svg {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     .brand-text-block {
       flex: 1;
@@ -1192,15 +1228,25 @@ export function generateDeliveryNoteHtml(
     }
 
     @media print {
-      body {
-        background: #ffffff;
-        padding: 0;
+      html, body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .invoice-wrapper {
-        border: none;
-        box-shadow: none;
-        padding: 0;
-        max-width: 100%;
+        border: 1px solid #0f172a !important;
+        box-shadow: none !important;
+        padding: 12px 16px !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .top-bar, .party-grid, .line-items, .settlement-grid, .balance-note-box, .settlement-receipt-box, .terms-box, .signatures-section {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
       .no-print {
         display: none !important;
@@ -1213,7 +1259,9 @@ export function generateDeliveryNoteHtml(
     <!-- Header -->
     <div class="top-bar">
       <div class="brand-section">
-        <img class="brand-logo-img" src="${PATEL_MOTORS_LOGO_DATA_URI}" alt="Patel Motors Logo" />
+        <div class="brand-logo-container">
+          ${PATEL_MOTORS_LOGO_SVG_RAW}
+        </div>
         <div class="brand-text-block">
           <h1 class="brand-name">${dealership.name}</h1>
           <div class="brand-sub">${isSettled ? 'Settled Acquisition Invoice & Final Clearance' : 'Two-Wheeler Acquisition & Delivery Challan'}</div>
